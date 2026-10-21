@@ -1,0 +1,48 @@
+GTA • GRAND TRACKER AUTO V1
+===========================
+Painel para Adobe Premiere Pro que reenquadra videos 16:9 em 9:16
+seguindo o pregador (ou qualquer pessoa), com keyframes de Position.
+
+Instalacao (uma vez)
+--------------------
+1. Se nao tiver Python: instale em https://www.python.org/downloads/
+   marcando "Add python.exe to PATH".
+2. Feche o Premiere.
+3. De dois cliques em instalar.bat.
+4. Abra o Premiere: Window > Extensions > GTA • Grand Tracker Auto V1.
+
+Como usar
+---------
+1. Crie uma sequencia vertical (1080x1920) com os trechos do culto.
+   Importante: os clipes NAO podem estar com "Scale to Frame Size" ligado.
+2. Selecione um ou mais clipes na timeline.
+3. Clique em "Trackear selecionados".
+   A fila mostra cada clipe ([1/N]), a barra de progresso e o tempo estimado.
+   Se um clipe falhar, os outros continuam. Ao final toca um som:
+   OK = tudo certo, FAIL = algum clipe teve problema (veja na fila).
+4. Os keyframes aparecem em Effect Controls > Motion > Position.
+
+Botoes e ajustes
+----------------
+Limpar Motion:  zera o Motion dos clipes selecionados (keyframes, posicao,
+                escala, rotacao, crop...), deixando o clipe limpo.
+Estilo:         "Rosto no centro" segue o rosto o tempo todo (padrao).
+                "Camera parada" so anda quando ele muda de lugar.
+Zona morta:     quanto ele pode se mexer antes da camera andar.
+Suavidade:      maior = movimentos de camera mais lentos.
+Cancelar fila:  para a fila na hora.
+Rodar de novo apaga os keyframes de Position anteriores do clipe.
+
+Atualizacoes
+------------
+O painel avisa quando existe uma versao nova. Clique em "Atualizar" e,
+quando terminar, feche e abra o Premiere.
+Tambem da para verificar em Configuracoes > Verificar atualizacoes.
+
+Problemas
+---------
+"Python nao encontrado": em Configuracoes, troque "py -3" por "python".
+O painel nao aparece no menu: rode o instalar.bat de novo e reinicie o Premiere.
+
+Grand Tracker Auto | Desenvolvido por Lucas Chedick
+https://github.com/lchedick/grand-tracker-auto
