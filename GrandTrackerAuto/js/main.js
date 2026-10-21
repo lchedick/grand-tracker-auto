@@ -35,10 +35,11 @@
     return res;
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function showMission(what, time) {
+  function showMission(what, time, extra) {
     $("status").className = "";
     $("status").innerHTML = '<div class="mission"><div class="mt">Missão cumprida!</div>' +
-      '<div class="ms">' + esc(what) + " em <b>" + esc(time) + "</b></div></div>";
+      '<div class="ms">' + esc(what) + " em <b>" + esc(time) + "</b>" +
+      (extra ? ' · <span style="color:var(--warn)">' + esc(extra) + "</span>" : "") + "</div></div>";
   }
   function setStatus(msg, cls, big) {
     $("status").innerHTML = esc(msg || "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
@@ -92,7 +93,7 @@
   function load(k, d) { try { var v = localStorage.getItem("gta_" + k); return v === null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem("gta_" + k, v); } catch (e) {} }
   var DEF = { modo: "rosto", dz_rosto: "0", dz_operador: "0", sv: "5", pos: "0", fill: "1",
-              qual: "normal", proxy: "1", sounds: "1", autoupd: "1", vol: "100", notify: "1", ui: "1" };
+              qual: "normal", proxy: "1", sounds: "1", autoupd: "1", vol: "100", notify: "1", ui: "1", fgonly: "1" };
   var QUAL_HINT = {
     rapida: "Analisa 5 quadros por segundo. Cerca de 1,4× mais rápida. Boa para pregador mais parado.",
     normal: "Analisa 10 quadros por segundo. O equilíbrio para o dia a dia.",
@@ -135,6 +136,9 @@
     save("autoupd", $("optAutoUpd").checked ? "1" : "0");
     paintRange($("vol")); $("volv").textContent = $("vol").value + "%"; save("vol", $("vol").value);
     save("notify", $("optNotify").checked ? "1" : "0");
+    save("fgonly", $("optFgOnly").checked ? "1" : "0");
+    var dzt = $("dz").value + "%", svt = (Number($("sv").value) / 10).toFixed(1), pst = posLabel($("pos").value);
+    $("moreSum").textContent = "Zona " + dzt + " · Suav. " + svt + " · " + pst;
   }
   function applyPrefs() {
     $("sv").value = load("sv", DEF.sv);
@@ -146,6 +150,7 @@
     $("optAutoUpd").checked = load("autoupd", DEF.autoupd) === "1";
     $("vol").value = load("vol", DEF.vol);
     $("optNotify").checked = load("notify", DEF.notify) === "1";
+    $("optFgOnly").checked = load("fgonly", DEF.fgonly) === "1";
     setQual(load("qual", DEF.qual));
     setUiScale(load("ui", DEF.ui));
     setModo(load("modo", DEF.modo));
@@ -158,7 +163,7 @@
     $(id).open = load("open_" + id, "0") === "1";
     $(id).addEventListener("toggle", function () { save("open_" + id, $(id).open ? "1" : "0"); });
   });
-  ["dz", "sv", "pos", "fill", "py", "optProxy", "optSounds", "optAutoUpd", "vol", "optNotify"].forEach(function (id) {
+  ["dz", "sv", "pos", "fill", "py", "optProxy", "optSounds", "optAutoUpd", "vol", "optNotify", "optFgOnly"].forEach(function (id) {
     $(id).addEventListener("input", refresh); $(id).addEventListener("change", refresh);
   });
   $("pos").addEventListener("dblclick", function () { $("pos").value = 0; refresh(); });
@@ -197,7 +202,7 @@
   });
 
   $("resetDefaults").addEventListener("click", function () {
-    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd", "vol", "notify", "ui"].forEach(function (k) { save(k, DEF[k]); });
+    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd", "vol", "notify", "ui", "fgonly"].forEach(function (k) { save(k, DEF[k]); });
     applyPrefs();
     $("supportResult").className = "result ok";
     $("supportResult").textContent = "✓ Padrões restaurados (o comando do Python foi mantido).";
@@ -233,6 +238,10 @@
   // render incremental: cada item tem o seu <li>, assim as animacoes nao reiniciam a cada atualizacao
   function rowHTML(it) {
     var st = it.state === "running" ? Math.round(it.progress * 100) + "%" : ST[it.state];
+    if (it.state === "ok" && typeof it.conf === "number") {
+      var pc = Math.round(it.conf * 100), lv = pc >= 90 ? "hi" : pc >= 70 ? "mid" : "lo";
+      st = '<span class="conf ' + lv + '" title="O pregador foi encontrado em ' + pc + '% do tempo">' + pc + "%</span>" + st;
+    }
     var sub = it.state === "running" ? '<div class="bar sub"><div style="width:' + Math.round(it.progress * 100) + '%"></div></div>' : "";
     var msg = it.msg ? '<div class="msg">' + esc(it.msg) + "</div>" : "";
     return '<img class="ico" alt="" src="assets/icons/' + ICON[it.state] + '.png">' +
@@ -246,7 +255,7 @@
       var li = ul.children[i];
       if (!li) { li = document.createElement("li"); li.title = "Clique para encontrar na timeline"; ul.appendChild(li); }
       li.dataset.i = i;
-      var key = it.state + "|" + Math.round(it.progress * 100) + "|" + it.msg + "|" + it.name;
+      var key = it.state + "|" + Math.round(it.progress * 100) + "|" + it.msg + "|" + it.name + "|" + it.conf;
       if (li._key !== key) {
         var prevState = li._state;
         li.className = it.state;
@@ -363,6 +372,7 @@
 
   async function processItem(it, sel) {
     var outFile = path.join(os.tmpdir(), "gta_" + Date.now() + "_" + Math.random().toString(36).slice(2) + ".json");
+    var t0 = Date.now();
     var usedProxy = await runEngine(it, sel, outFile, function (p) { it.progress = p; renderQueue(); updateEta(); });
     var data = JSON.parse(fs.readFileSync(outFile, "utf8"));
     try { fs.unlinkSync(outFile); } catch (e) {}
@@ -372,8 +382,9 @@
       keys: data.keys.map(function (k) { return { t: k.t, nx: k.nx }; })
     };
     var res = await host("gta_apply(" + JSON.stringify(payload) + ")");
-    var warn = data.detected_ratio < 0.7 ? " · encontrei o pregador em só " + Math.round(data.detected_ratio * 100) + "% do tempo, confira" : "";
-    return res.count + " keyframes" + (usedProxy ? " · via proxy" : "") + warn;
+    it.conf = Number(data.detected_ratio);
+    var warn = data.detected_ratio < 0.7 ? " · confira este clipe" : "";
+    return res.count + " keyframes · " + fmtTime((Date.now() - t0) / 1000) + (usedProxy ? " · via proxy" : "") + warn;
   }
 
   function setBusy(b) {
@@ -420,11 +431,12 @@
     } else if (bad) {
       setStatus(ok + " de " + run.length + (run.length === 1 ? " clipe trackeado" : " clipes trackeados") + " · " + bad + " com problema (veja a fila).", "err", true);
       play("Alert_FAIL.mp3");
-      notify("Fila terminada com problemas", ok + " de " + run.length + " · " + bad + " com problema. Veja a fila no painel.");
+      notifyEnd("Fila terminada com problemas", ok + " de " + run.length + " · " + bad + " com problema. Veja a fila no painel.");
     } else {
-      showMission(clipsTxt(ok), fmtTime(elapsed));
+      var low = run.filter(function (q) { return q.state === "ok" && q.conf < 0.7; }).length;
+      showMission(clipsTxt(ok), fmtTime(elapsed), low ? low + (low === 1 ? " para conferir" : " para conferir") : "");
       play("Alert_OK.mp3");
-      notify("Missão cumprida!", clipsTxt(ok) + " em " + fmtTime(elapsed) + ".");
+      notifyEnd("Missão cumprida!", clipsTxt(ok) + " em " + fmtTime(elapsed) + ".");
     }
   }
 
@@ -452,7 +464,7 @@
     setStatus("");
     queue.forEach(function (it) {
       it.inRun = it.state === "fail";
-      if (it.inRun) { it.state = "queued"; it.msg = ""; it.progress = 0; }
+      if (it.inRun) { it.state = "queued"; it.msg = ""; it.progress = 0; it.conf = undefined; }
     });
     await runQueue(lastSel);
   });
@@ -745,6 +757,42 @@
     ].join("; "));
     aumidReady = true;
   }
+  // o Premiere esta em primeiro plano? No Windows, se nao estiver, ja faz o icone piscar na barra de tarefas
+  async function premiereInFront(flashIfBehind) {
+    try {
+      if (IS_WIN) {
+        var out = await psRun([
+          "Add-Type -Namespace GTA -Name W -MemberDefinition @'",
+          "[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow();",
+          "[DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);",
+          "[StructLayout(LayoutKind.Sequential)] public struct FLASHWINFO { public uint cbSize; public IntPtr hwnd; public uint dwFlags; public uint uCount; public uint dwTimeout; }",
+          "[DllImport(\"user32.dll\")] public static extern bool FlashWindowEx(ref FLASHWINFO f);",
+          "'@",
+          "$pid2 = [uint32]0",
+          "[void][GTA.W]::GetWindowThreadProcessId([GTA.W]::GetForegroundWindow(), [ref]$pid2)",
+          "$name = (Get-Process -Id $pid2 -ErrorAction SilentlyContinue).ProcessName",
+          "if ($name -like 'Adobe Premiere Pro*' -or $name -like 'CEPHtmlEngine*') { 'FG'; exit }",
+          "'BG'",
+          flashIfBehind ? [
+            "$pp = Get-Process -Name 'Adobe Premiere Pro' -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1",
+            "if ($pp) { $f = New-Object GTA.W+FLASHWINFO; $f.cbSize = [uint32][Runtime.InteropServices.Marshal]::SizeOf($f); $f.hwnd = $pp.MainWindowHandle; $f.dwFlags = 14; $f.uCount = 0; $f.dwTimeout = 0; [void][GTA.W]::FlashWindowEx([ref]$f) }"
+          ].join("\n") : ""
+        ].join("\n"));
+        return /FG/.test(out);
+      }
+      if (IS_MAC) {
+        var o = await exec("/bin/bash", ["-c", 'lsappinfo info -only name "$(lsappinfo front)"']);
+        return /Premiere/i.test(o);
+      }
+    } catch (e) { addLog("primeiro plano: " + e.message + "\n"); }
+    return false;
+  }
+  async function notifyEnd(title, body) {
+    if (!IS_WIN && !IS_MAC) return;
+    var front = await premiereInFront(IS_WIN);
+    if (front && $("optFgOnly").checked) return;
+    notify(title, body);
+  }
   async function notify(title, body, force) {
     if ((!IS_WIN && !IS_MAC) || (!force && !$("optNotify").checked)) return;
     if (IS_MAC) {
@@ -783,6 +831,7 @@
     } catch (e) { el.className = "notif-status"; el.textContent = ""; }
   }
   if (!IS_WIN && !IS_MAC) $("notifBox").hidden = true;
+  if (IS_MAC) { $("notifLabel").textContent = "Notificação do Mac ao terminar"; $("fgHint").hidden = true; }
   $("openConfig").addEventListener("click", function () {
     if (IS_WIN) checkNotifyStatus();
     else if (IS_MAC) { $("notifStatus").className = "notif-status"; $("notifStatus").textContent = "No Mac, a primeira notificação pode pedir permissão. Se não aparecer, veja Ajustes do Sistema → Notificações → Editor de Scripts."; }

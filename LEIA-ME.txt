@@ -52,6 +52,9 @@ Estilo:            "Rosto no centro" segue o rosto o tempo todo.
                    "Câmera parada" só anda quando ele muda de lugar.
 Fila:              clique num clipe para encontrá-lo na timeline.
                    Se algum falhar, use "Tentar de novo os que falharam".
+                   O selo (ex.: 98%) mostra em quanto do tempo o pregador
+                   foi encontrado: verde está ótimo, amarelo ou vermelho
+                   vale conferir.
 Cancelar fila:     para a fila na hora.
 
 Em "Mais opções":
@@ -69,7 +72,8 @@ CONFIGURAÇÕES (engrenagem no topo)
 Qualidade:         Rápida, Normal ou Precisa.
 Usar proxy:        se o clipe tiver proxy, analisa o proxy (mais rápido).
 Sons:              liga/desliga, volume e botões para testar.
-Notificação:       aviso do sistema quando a fila termina.
+Notificação:       aviso do sistema quando a fila termina (por padrão,
+                   só quando o Premiere não está em primeiro plano).
 Atualizações:      verificar ao abrir (liga/desliga).
 Interface:         tamanho Pequena, Média ou Grande.
 Python:            comando usado e botão "Testar Python".

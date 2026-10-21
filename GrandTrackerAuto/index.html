@@ -62,7 +62,13 @@
   .chev { display:inline-block; width:12px; color:var(--muted); transition:transform .15s; margin-right:4px; }
   details[open] > summary .chev { transform:rotate(90deg); }
   .more { margin-top:12px; border-top:1px solid var(--line); padding-top:8px; }
-  .more > summary { color:var(--muted); font-size:12px; padding:2px 0; }
+  .more > summary { color:var(--muted); font-size:12px; padding:2px 0; display:flex; align-items:center; }
+  .more > summary .sum { margin-left:auto; font-size:11px; color:#6f6f6f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-left:8px; }
+  .more[open] > summary .sum { display:none; }
+  .conf { display:inline-block; font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:9px; margin-right:6px; }
+  .conf.hi { background:#1e3628; color:var(--ok); }
+  .conf.mid { background:#3a2f17; color:var(--warn); }
+  .conf.lo { background:#3a1d1b; color:var(--err); }
   .more > summary:hover { color:var(--text); }
   .more[open] > summary { margin-bottom:8px; }
   .sec.fold > summary h3 { margin:0; display:flex; align-items:center; }
@@ -237,7 +243,7 @@
     </div>
 
     <details class="more" id="moreOpts">
-    <summary><span class="chev">▸</span>Mais opções</summary>
+    <summary><span class="chev">▸</span>Mais opções<span class="sum" id="moreSum"></span></summary>
     <div class="field">
       <div class="lbl"><img class="ico" src="assets/icons/DeadZone.png" alt="">Zona morta</div>
       <div class="row"><input id="dz" type="range" min="0" max="35"><span class="val" id="dzv"></span></div>
@@ -275,7 +281,7 @@
     </div>
   </div>
 </main>
-<footer id="footer">Grand Tracker Auto | v1.0.7 | Desenvolvido por Lucas Chedick</footer>
+<footer id="footer">Grand Tracker Auto | v1.0.8 | Desenvolvido por Lucas Chedick</footer>
 
 <div class="modal" id="config">
   <div class="sheet" role="dialog" aria-label="Configurações">
@@ -310,7 +316,8 @@
           <button class="play" id="playFail">▶ FAIL</button>
         </div>
         <div id="notifBox">
-          <label class="switch"><span>Notificação do Windows ao terminar</span><input type="checkbox" id="optNotify"></label>
+          <label class="switch"><span id="notifLabel">Notificação do Windows ao terminar</span><input type="checkbox" id="optNotify"></label>
+          <label class="switch"><span>Só notificar quando o Premiere não estiver em primeiro plano<br><small class="hint" id="fgHint">Se o Premiere estiver minimizado ou atrás de outra janela, o ícone dele também pisca na barra de tarefas.</small></span><input type="checkbox" id="optFgOnly"></label>
           <div class="notif-status" id="notifStatus"></div>
           <button class="btn secondary small" id="testNotify">Testar notificação</button>
         </div>

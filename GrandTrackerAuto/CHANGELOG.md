@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.8
+
+- **Notificação mais esperta**: se o Premiere estiver em primeiro plano quando a fila terminar, a notificação não aparece (o som continua tocando). Dá para desligar em Configurações → Avisos.
+- **Ícone piscando (Windows)**: se o Premiere estiver minimizado ou atrás de outra janela, o ícone dele pisca na barra de tarefas até você voltar.
+- **Selo de confiança na fila**: cada clipe pronto mostra em quanto do tempo o pregador foi encontrado (verde acima de 90%, amarelo de 70% a 89%, vermelho abaixo de 70%).
+- **Tempo de cada clipe** na fila (ex.: "39 keyframes · 18s").
+- **Resumo dos ajustes** ao lado de "Mais opções" (ex.: "Zona 0% · Suav. 0.5 · Centro").
+
 ## v1.0.7
 
 - **Instalação do Python automática (Windows)**: se o Python não estiver instalado, o instalador pergunta e instala sozinho, sem pedir senha de administrador.
