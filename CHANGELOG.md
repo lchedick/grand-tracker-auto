@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.3
+
+- Mensagens de conclusão vermelhas com a mesma formatação das verdes (tamanho e centralização).
+- Botão "Reiniciar o Premiere agora" depois de uma atualização (Windows): fecha o Premiere, pedindo para salvar se precisar, e abre de novo com o mesmo projeto.
+
+## v1.0.2
+
+- Ícones 50% maiores (ícones exportados em alta resolução).
+- Novo ícone do Limpar Motion.
+- Aviso de atualização em verde.
+- Mensagens de conclusão em verde menores e centralizadas.
+- Botões de Estilo com ícone em cima do texto; título não quebra mais linha.
+- Painel abre um pouco mais largo por padrão.
+
 ## v1.0.1
 
 - Ícones 2x maiores.

@@ -197,7 +197,7 @@
 
   $("run").addEventListener("click", async function () {
     if (busy) return;
-    $("log").textContent = ""; setStatus("");
+    $("log").textContent = ""; setStatus(""); $("restart").classList.remove("show");
     var sel;
     try {
       sel = await host("gta_getSelectedClips()");
@@ -294,6 +294,7 @@
 
   var latest = null;
   async function checkUpdate(silent) {
+    $("updateInfo").className = "hint";
     if (!silent) $("updateInfo").textContent = "Verificando…";
     try {
       var rel = await httpGet("https://api.github.com/repos/" + INFO.repo + "/releases/latest");
@@ -303,8 +304,10 @@
         $("updateText").textContent = "Nova versão v" + latest.version + " disponível";
         $("updateBar").classList.add("show");
         $("updateInfo").textContent = "Nova versão v" + latest.version + " disponível.";
+        $("updateInfo").className = "hint new";
       } else {
         $("updateInfo").textContent = "Você já está na versão mais recente (v" + INFO.version + ").";
+        $("updateInfo").className = "hint new";
       }
     } catch (e) {
       $("updateInfo").textContent = silent ? "" : "Não consegui verificar (" + e.message + ").";
@@ -360,7 +363,8 @@
         try { await runP(py.cmd, py.args.concat(["-m", "pip", "install", "--upgrade", "-r", reqFile])); } catch (e) { addLog("pip: " + e.message + "\n"); }
       }
       $("updateBar").classList.remove("show");
-      setStatus("Atualizado para v" + latest.version + "! Feche e abra o Premiere para concluir.", "ok", true);
+      setStatus("Atualizado para v" + latest.version + "! Reinicie o Premiere para concluir.", "ok", true);
+      if (IS_WIN) $("restart").classList.add("show");
       play("Alert_OK.mp3");
     } catch (e) {
       setStatus("Falha na atualização: " + e.message, "err");
@@ -369,6 +373,40 @@
     setBusy(false);
   }
   $("updateBtn").addEventListener("click", doUpdate);
+
+  // ------------------------------------------------------------ reiniciar o premiere
+  // Um PowerShell separado espera o Premiere fechar e abre de novo com o mesmo projeto.
+  // Se a pessoa cancelar o "salvar?", o Premiere nao fecha e nada acontece.
+  async function restartPremiere() {
+    var b = $("restart");
+    b.disabled = true;
+    try {
+      var proj = "";
+      try { proj = await evalES("app.project && app.project.path ? app.project.path : ''"); } catch (e) {}
+      if (/^EvalScript error/i.test(proj)) proj = "";
+      var ps = [
+        "$p = Get-Process -Name 'Adobe Premiere Pro' -ErrorAction SilentlyContinue | Select-Object -First 1",
+        "if (-not $p) { exit 1 }",
+        "$exe = $p.Path",
+        "$p.WaitForExit(900000) | Out-Null",
+        "if (-not $p.HasExited) { exit 2 }",
+        "Start-Sleep -Seconds 3",
+        "$proj = '" + String(proj).replace(/'/g, "''") + "'",
+        "if ($proj -and (Test-Path -LiteralPath $proj)) { Start-Process -FilePath $exe -ArgumentList ('\"' + $proj + '\"') } else { Start-Process -FilePath $exe }"
+      ].join("; ");
+      var encoded = req("buffer").Buffer.from(ps, "utf16le").toString("base64");   // evita problemas com aspas e acentos
+      var child = cp.spawn("powershell", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
+        { detached: true, stdio: "ignore", windowsHide: true });
+      child.unref();
+      setStatus("Reiniciando o Premiere…", "ok", true);
+      setTimeout(function () { evalES("app.quit()"); }, 800);
+      setTimeout(function () { b.disabled = false; }, 15000);   // se cancelou o salvar, libera o botao
+    } catch (e) {
+      setStatus("Não consegui reiniciar automaticamente. Feche e abra o Premiere manualmente.", "err", true);
+      b.disabled = false;
+    }
+  }
+  $("restart").addEventListener("click", restartPremiere);
   $("checkUpdate").addEventListener("click", function () { checkUpdate(false); });
 
   renderQueue();

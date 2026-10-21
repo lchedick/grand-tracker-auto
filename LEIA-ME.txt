@@ -36,7 +36,8 @@ Rodar de novo apaga os keyframes de Position anteriores do clipe.
 Atualizacoes
 ------------
 O painel avisa quando existe uma versao nova. Clique em "Atualizar" e,
-quando terminar, feche e abra o Premiere.
+quando terminar, clique em "Reiniciar o Premiere agora"
+(ou feche e abra o Premiere).
 Tambem da para verificar em Configuracoes > Verificar atualizacoes.
 
 Problemas

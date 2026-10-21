@@ -14,21 +14,21 @@
   body { padding:10px 12px 0; display:flex; flex-direction:column; min-height:100vh; }
   main { flex:1; }
 
-  .ico { display:inline-block; width:32px; height:32px; flex:none; object-fit:contain; }
-  .ico.lg { width:36px; height:36px; }
+  .ico { display:inline-block; width:48px; height:48px; flex:none; object-fit:contain; }
+  .ico.lg { width:54px; height:54px; }
 
   header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-  header h1 { flex:1; margin:0; font-size:14px; font-weight:600; letter-spacing:.2px; }
+  header h1 { flex:1; min-width:0; margin:0; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .iconbtn { background:none; border:0; padding:4px; border-radius:3px; color:var(--icon); cursor:pointer; display:flex; }
   .iconbtn:hover { background:#333; }
   .iconbtn:hover .ico, .btn.secondary:hover:not(:disabled) .ico { filter:brightness(1.35); }
   .btn:disabled .ico { opacity:.45; }
 
-  .update { display:none; align-items:center; gap:8px; background:#1f3347; border:1px solid #2d5378; color:#cfe4f8;
+  .update { display:none; align-items:center; gap:8px; background:#1e3628; border:1px solid #2f6a45; color:#cdeed9;
             border-radius:4px; padding:7px 8px; margin-bottom:10px; }
   .update.show { display:flex; }
   .update span { flex:1; }
-  .update button { background:var(--accent); color:#fff; border:0; border-radius:3px; padding:4px 9px; cursor:pointer; font-size:11px; font-weight:600; }
+  .update button { background:var(--ok); color:#fff; border:0; border-radius:3px; padding:4px 9px; cursor:pointer; font-size:11px; font-weight:600; }
 
   .actions { display:flex; flex-wrap:wrap; gap:6px; }
   .btn { display:flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:4px; padding:6px 10px;
@@ -45,7 +45,7 @@
   .field + .field { margin-top:12px; }
 
   .seg { display:flex; background:var(--panel2); border:1px solid var(--line); border-radius:4px; padding:2px; gap:2px; }
-  .seg button { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; border:0; border-radius:3px;
+  .seg button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:3px;
                 background:none; color:var(--muted); padding:6px 4px; cursor:pointer; font-size:11.5px; }
   .seg button:hover { color:var(--text); }
   .seg button.on { background:#3a3a3a; color:#fff; }
@@ -72,7 +72,7 @@
   .bar > div { height:100%; width:0; background:var(--accent); transition:width .25s; }
   .overall { margin:8px 0 6px; }
   #queueList { list-style:none; margin:0; padding:0; max-height:380px; overflow:auto; }
-  #queueList li { display:grid; grid-template-columns:32px 1fr auto; column-gap:8px; row-gap:3px; align-items:center;
+  #queueList li { display:grid; grid-template-columns:48px 1fr auto; column-gap:8px; row-gap:3px; align-items:center;
                   padding:6px 2px; border-top:1px solid var(--line); }
   #queueList li:first-child { border-top:0; }
   #queueList .name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -89,7 +89,13 @@
   #cancel.show { display:flex; }
 
   #status { min-height:16px; margin-top:8px; font-size:11.5px; }
-  #status.big { font-size:23px; line-height:1.3; margin:10px 0 4px; }
+  #status.big { font-size:17px; line-height:1.3; margin:10px 0 4px; text-align:center; }
+  #restart { display:none; width:100%; margin-top:8px; background:var(--ok); }
+  #restart:hover:not(:disabled) { background:#5cc183; }
+  #restart.show { display:flex; }
+  .restart-hint { display:none; text-align:center; color:var(--muted); font-size:11px; margin-top:4px; }
+  #restart.show + .restart-hint { display:block; }
+  #updateInfo.new { color:var(--ok); }
   #status b { font-weight:700; }
   #status.err { color:var(--err); } #status.ok { color:var(--ok); }
 
@@ -127,6 +133,8 @@
     </button>
   </div>
   <div id="status"></div>
+  <button class="btn" id="restart"><img class="ico" src="assets/icons/Update_on.png" alt="">Reiniciar o Premiere agora</button>
+  <div class="restart-hint">O Premiere vai fechar (pedindo para salvar, se precisar) e abrir de novo com o mesmo projeto.</div>
 
   <div class="card">
     <div class="field">
@@ -177,7 +185,7 @@
     <pre id="log"></pre>
   </details>
 </main>
-<footer id="footer">Grand Tracker Auto | v1.0.1 | Desenvolvido por Lucas Chedick</footer>
+<footer id="footer">Grand Tracker Auto | v1.0.3 | Desenvolvido por Lucas Chedick</footer>
 <script src="js/main.js"></script>
 </body>
 </html>

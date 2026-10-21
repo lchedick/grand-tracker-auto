@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.lchedick.grandtrackerauto" ExtensionBundleVersion="1.0.1"
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.lchedick.grandtrackerauto" ExtensionBundleVersion="1.0.3"
   ExtensionBundleName="Grand Tracker Auto" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="com.lchedick.grandtrackerauto.panel" Version="1.0.1" />
+    <Extension Id="com.lchedick.grandtrackerauto.panel" Version="1.0.3" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -33,7 +33,7 @@
           <Type>Panel</Type>
           <Menu>GTA • Grand Tracker Auto V1</Menu>
           <Geometry>
-            <Size><Height>620</Height><Width>340</Width></Size>
+            <Size><Height>760</Height><Width>390</Width></Size>
             <MinSize><Height>360</Height><Width>260</Width></MinSize>
           </Geometry>
           <Icons>
