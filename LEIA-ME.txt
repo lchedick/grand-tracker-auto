@@ -41,7 +41,9 @@ Configuracoes (engrenagem no topo)
 ----------------------------------
 Qualidade:      Rapida (5 quadros/s), Normal (10) ou Precisa (15, imagem maior).
 Usar proxy:     se o clipe tiver proxy, analisa o proxy (mais rapido).
-Sons / Atualizacoes ao abrir: liga e desliga.
+Sons:           liga/desliga, volume e botoes para testar os sons.
+Notificacao:    aviso do Windows quando a fila termina (com botao de teste).
+Atualizacoes ao abrir: liga e desliga.
 Testar Python:  confere se o Python e as bibliotecas estao instalados.
 Copiar diagnostico: copia informacoes para pedir ajuda.
 Rodar de novo apaga os keyframes de Position anteriores do clipe.
@@ -53,6 +55,8 @@ atualizacao, no topo). Clique em "Atualizar" e,
 quando terminar, clique em "Reiniciar o Premiere agora"
 (ou feche e abra o Premiere).
 Para verificar na hora, clique no icone de atualizacao no topo.
+Depois de atualizar, o painel mostra as novidades da versao. Para ver de
+novo: Configuracoes > Sobre > Ver notas da versao.
 
 Problemas
 ---------

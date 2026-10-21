@@ -50,7 +50,7 @@ tools/build_release.py   gera o zip da release
 
 ## Publicar uma versão nova
 
-Veja [RELEASE.md](RELEASE.md).
+Veja [RELEASE.md](RELEASE.md). Histórico de versões em [GrandTrackerAuto/CHANGELOG.md](GrandTrackerAuto/CHANGELOG.md) (o painel mostra essas notas em "Ver notas da versão").
 
 ---
 

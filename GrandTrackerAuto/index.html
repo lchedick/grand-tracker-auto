@@ -59,6 +59,26 @@
   #status.err { color:var(--err); } #status.ok { color:var(--ok); }
   #status.big { font-size:17px; line-height:1.3; margin:10px 0 4px; text-align:center; }
   #status b { font-weight:700; }
+  #status .notes-btn { margin:8px auto 0; }
+
+  /* Missao cumprida */
+  .mission { text-align:center; padding:6px 0 2px; }
+  .mission .mt { display:inline-block; font-size:24px; font-weight:800; letter-spacing:.5px; color:var(--ok);
+                 background:linear-gradient(100deg, var(--ok) 0%, var(--ok) 40%, #e9fff1 50%, var(--ok) 60%, var(--ok) 100%);
+                 background-size:250% 100%; background-position:100% 0;
+                 -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+                 animation:missionIn .55s cubic-bezier(.2,.9,.3,1.35) both, shine .9s ease-out .5s both; }
+  .mission .ms { font-size:13px; color:var(--ok); margin-top:2px; animation:fadeUp .4s ease-out .35s both; }
+  @keyframes missionIn { from { opacity:0; transform:translateY(10px) scale(.8); } to { opacity:1; transform:none; } }
+  @keyframes shine { from { background-position:100% 0; } to { background-position:0 0; } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+  /* animacoes dos icones da fila */
+  #queueList .ico.pop { animation:pop .5s cubic-bezier(.2,.9,.3,1.5); }
+  #queueList .ico.shake { animation:shake .45s ease-in-out; }
+  @keyframes pop { 0% { transform:scale(.6); } 60% { transform:scale(1.18); } 100% { transform:scale(1); } }
+  @keyframes shake { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-5px) rotate(-4deg); }
+                     40% { transform:translateX(5px) rotate(4deg); } 60% { transform:translateX(-3px); } 80% { transform:translateX(3px); } }
   #restart { display:none; margin-top:8px; }
   #restart.show { display:flex; }
   .restart-hint { display:none; text-align:center; color:var(--muted); font-size:11px; margin-top:4px; }
@@ -145,6 +165,21 @@
   .about { color:var(--muted); font-size:11.5px; line-height:1.6; }
   .about b { color:var(--text); }
   .link { color:var(--accent-h); cursor:pointer; text-decoration:underline; }
+  .sound-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+  .sound-row .lbl { margin:0; min-width:56px; }
+  .play { background:#3a3a3a; color:var(--text); border:0; border-radius:3px; padding:4px 8px; cursor:pointer; font-size:11px; }
+  .play:hover { background:#454545; }
+  .notif-status { font-size:11.5px; margin:2px 0 6px; }
+  .notif-status.ok { color:var(--ok); } .notif-status.err { color:var(--warn); }
+
+  /* notas da versao */
+  .notes { font-size:12px; line-height:1.55; }
+  .notes h4 { margin:12px 0 4px; font-size:13px; color:#fff; }
+  .notes h4:first-child { margin-top:4px; }
+  .notes ul { margin:0; padding-left:18px; }
+  .notes li { margin:2px 0; }
+  .notes b { color:#fff; }
+  .notes .older summary { cursor:pointer; color:var(--muted); margin-top:12px; }
   details.log summary { cursor:pointer; color:var(--muted); font-size:11px; margin-top:8px; }
   pre { white-space:pre-wrap; word-break:break-all; font-size:10px; color:var(--muted); max-height:140px; overflow:auto; margin:6px 0 0;
         background:var(--panel2); border-radius:3px; padding:6px; }
@@ -222,7 +257,7 @@
     </div>
   </div>
 </main>
-<footer id="footer">Grand Tracker Auto | v1.0.4 | Desenvolvido por Lucas Chedick</footer>
+<footer id="footer">Grand Tracker Auto | v1.0.5 | Desenvolvido por Lucas Chedick</footer>
 
 <div class="modal" id="config">
   <div class="sheet" role="dialog" aria-label="Configurações">
@@ -247,6 +282,20 @@
       <div class="sec">
         <h3>Avisos</h3>
         <label class="switch"><span>Sons ao terminar a fila</span><input type="checkbox" id="optSounds"></label>
+        <div class="sound-row">
+          <span class="lbl">Volume</span>
+          <input id="vol" type="range" min="0" max="100" step="5"><span class="val" id="volv"></span>
+        </div>
+        <div class="sound-row">
+          <span class="lbl">Testar</span>
+          <button class="play" id="playOk">▶ OK</button>
+          <button class="play" id="playFail">▶ FAIL</button>
+        </div>
+        <div id="notifBox">
+          <label class="switch"><span>Notificação do Windows ao terminar</span><input type="checkbox" id="optNotify"></label>
+          <div class="notif-status" id="notifStatus"></div>
+          <button class="btn secondary small" id="testNotify">Testar notificação</button>
+        </div>
         <label class="switch"><span>Verificar atualizações ao abrir</span><input type="checkbox" id="optAutoUpd"></label>
       </div>
 
@@ -276,8 +325,20 @@
           <span class="link" id="ghLink">github.com/lchedick/grand-tracker-auto</span><br>
           Licença MIT · Modelos: YOLOX (Apache-2.0) e YuNet (MIT)
         </div>
+        <button class="btn secondary small" id="aboutNotes" style="margin-top:8px">Ver notas da versão</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="modal" id="notesModal">
+  <div class="sheet" role="dialog" aria-label="Notas da versão">
+    <div class="sheet-head">
+      <img class="ico sm" src="assets/icons/Update.png" alt="">
+      <h2 id="notesTitle">Novidades</h2>
+      <button class="close" id="closeNotes" title="Fechar (Esc)">×</button>
+    </div>
+    <div class="sheet-body"><div class="notes" id="notesBody"></div></div>
   </div>
 </div>
 

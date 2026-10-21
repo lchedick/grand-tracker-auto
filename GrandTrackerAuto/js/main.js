@@ -34,6 +34,11 @@
     return res;
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function showMission(what, time) {
+    $("status").className = "";
+    $("status").innerHTML = '<div class="mission"><div class="mt">Missão cumprida!</div>' +
+      '<div class="ms">' + esc(what) + " em <b>" + esc(time) + "</b></div></div>";
+  }
   function setStatus(msg, cls, big) {
     $("status").innerHTML = esc(msg || "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
     $("status").className = (cls || "") + (big ? " big" : "");
@@ -45,9 +50,13 @@
     var m = Math.floor(s / 60), r = s % 60;
     return m + "min" + (r ? " " + (r < 10 ? "0" : "") + r + "s" : "");
   }
-  function play(name) {
-    if (!$("optSounds").checked) return;
-    try { var a = new Audio("assets/sounds/" + name); a.play().catch(function () {}); } catch (e) {}
+  function play(name, force) {
+    if (!force && !$("optSounds").checked) return;
+    try {
+      var a = new Audio("assets/sounds/" + name);
+      a.volume = Math.max(0, Math.min(1, Number($("vol").value) / 100));
+      a.play().catch(function () {});
+    } catch (e) {}
   }
   function openURL(url) {
     try {
@@ -82,7 +91,7 @@
   function load(k, d) { try { var v = localStorage.getItem("gta_" + k); return v === null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem("gta_" + k, v); } catch (e) {} }
   var DEF = { modo: "rosto", dz_rosto: "4", dz_operador: "15", sv: "10", pos: "0", fill: "1",
-              qual: "normal", proxy: "1", sounds: "1", autoupd: "1" };
+              qual: "normal", proxy: "1", sounds: "1", autoupd: "1", vol: "80", notify: "1" };
   var QUAL_HINT = {
     rapida: "Analisa 5 quadros por segundo. Cerca de 1,4× mais rápida. Boa para pregador mais parado.",
     normal: "Analisa 10 quadros por segundo. O equilíbrio para o dia a dia.",
@@ -111,6 +120,8 @@
     save("fill", $("fill").checked ? "1" : "0"); save("py", $("py").value.trim());
     save("proxy", $("optProxy").checked ? "1" : "0"); save("sounds", $("optSounds").checked ? "1" : "0");
     save("autoupd", $("optAutoUpd").checked ? "1" : "0");
+    paintRange($("vol")); $("volv").textContent = $("vol").value + "%"; save("vol", $("vol").value);
+    save("notify", $("optNotify").checked ? "1" : "0");
   }
   function applyPrefs() {
     $("sv").value = load("sv", DEF.sv);
@@ -120,15 +131,19 @@
     $("optProxy").checked = load("proxy", DEF.proxy) === "1";
     $("optSounds").checked = load("sounds", DEF.sounds) === "1";
     $("optAutoUpd").checked = load("autoupd", DEF.autoupd) === "1";
+    $("vol").value = load("vol", DEF.vol);
+    $("optNotify").checked = load("notify", DEF.notify) === "1";
     setQual(load("qual", DEF.qual));
     setModo(load("modo", DEF.modo));
   }
   $("modo").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b && !busy) setModo(b.dataset.v); });
   $("qual").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setQual(b.dataset.v); });
-  ["dz", "sv", "pos", "fill", "py", "optProxy", "optSounds", "optAutoUpd"].forEach(function (id) {
+  ["dz", "sv", "pos", "fill", "py", "optProxy", "optSounds", "optAutoUpd", "vol", "optNotify"].forEach(function (id) {
     $(id).addEventListener("input", refresh); $(id).addEventListener("change", refresh);
   });
   $("pos").addEventListener("dblclick", function () { $("pos").value = 0; refresh(); });
+  $("playOk").addEventListener("click", function () { play("Alert_OK.mp3", true); });
+  $("playFail").addEventListener("click", function () { play("Alert_FAIL.mp3", true); });
   var busy = false;
   applyPrefs();
 
@@ -138,7 +153,7 @@
   $("openConfig").addEventListener("click", openConfig);
   $("closeConfig").addEventListener("click", closeConfig);
   $("config").addEventListener("mousedown", function (e) { if (e.target === $("config")) closeConfig(); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeConfig(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeConfig(); closeNotes(); } });
   $("ghLink").addEventListener("click", function () { openURL("https://github.com/" + INFO.repo); });
 
   $("testPy").addEventListener("click", async function () {
@@ -162,7 +177,7 @@
   });
 
   $("resetDefaults").addEventListener("click", function () {
-    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd"].forEach(function (k) { save(k, DEF[k]); });
+    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd", "vol", "notify"].forEach(function (k) { save(k, DEF[k]); });
     applyPrefs();
     $("supportResult").className = "result ok";
     $("supportResult").textContent = "✓ Padrões restaurados (o comando do Python foi mantido).";
@@ -191,16 +206,35 @@
   var ICON = { queued: "Queue", running: "Track_accent", ok: "Ok_ok", fail: "Fail_err", skip: "Fail_warn", cancel: "CancelQueue" };
   var ST = { queued: "Na fila", ok: "Pronto", fail: "Falhou", skip: "Pulado", cancel: "Cancelado" };
 
+  // render incremental: cada item tem o seu <li>, assim as animacoes nao reiniciam a cada atualizacao
+  function rowHTML(it) {
+    var st = it.state === "running" ? Math.round(it.progress * 100) + "%" : ST[it.state];
+    var sub = it.state === "running" ? '<div class="bar sub"><div style="width:' + Math.round(it.progress * 100) + '%"></div></div>' : "";
+    var msg = it.msg ? '<div class="msg">' + esc(it.msg) + "</div>" : "";
+    return '<img class="ico" alt="" src="assets/icons/' + ICON[it.state] + '.png">' +
+      '<span class="name">' + esc(it.name) + '</span><span class="st">' + st + "</span>" + sub + msg;
+  }
   function renderQueue() {
     $("qempty").style.display = queue.length ? "none" : "";
-    $("queueList").innerHTML = queue.map(function (it, i) {
-      var st = it.state === "running" ? Math.round(it.progress * 100) + "%" : ST[it.state];
-      var sub = it.state === "running" ? '<div class="bar sub"><div style="width:' + Math.round(it.progress * 100) + '%"></div></div>' : "";
-      var msg = it.msg ? '<div class="msg">' + esc(it.msg) + "</div>" : "";
-      return '<li class="' + it.state + '" data-i="' + i + '" title="Clique para encontrar na timeline">' +
-        '<img class="ico" alt="" src="assets/icons/' + ICON[it.state] + '.png">' +
-        '<span class="name">' + esc(it.name) + '</span><span class="st">' + st + "</span>" + sub + msg + "</li>";
-    }).join("");
+    var ul = $("queueList");
+    while (ul.children.length > queue.length) ul.removeChild(ul.lastChild);
+    queue.forEach(function (it, i) {
+      var li = ul.children[i];
+      if (!li) { li = document.createElement("li"); li.title = "Clique para encontrar na timeline"; ul.appendChild(li); }
+      li.dataset.i = i;
+      var key = it.state + "|" + Math.round(it.progress * 100) + "|" + it.msg + "|" + it.name;
+      if (li._key !== key) {
+        var prevState = li._state;
+        li.className = it.state;
+        li.innerHTML = rowHTML(it);
+        li._key = key; li._state = it.state;
+        if (prevState && prevState !== it.state) {
+          var ic = li.querySelector(".ico");
+          if (it.state === "ok") ic.classList.add("pop");
+          else if (it.state === "fail" || it.state === "skip") ic.classList.add("shake");
+        }
+      }
+    });
     var active = queue.filter(function (it) { return it.inRun; });
     var idx = active.findIndex(function (it) { return it.state === "running"; });
     var done = active.filter(function (it) { return it.state !== "queued" && it.state !== "running"; }).length;
@@ -342,14 +376,17 @@
     var failed = queue.filter(function (q) { return q.state === "fail"; }).length;
     $("retry").hidden = !failed || cancelled;
     lastQueueSummary = queue.map(function (q) { return "- " + q.name + ": " + ST[q.state] + (q.msg ? " (" + q.msg + ")" : ""); }).join("\n");
+    var clipsTxt = function (n) { return n + (n === 1 ? " clipe trackeado" : " clipes trackeados"); };
     if (cancelled) {
       setStatus("Fila cancelada. " + ok + " de " + run.length + (run.length === 1 ? " clipe trackeado." : " clipes trackeados."));
     } else if (bad) {
       setStatus(ok + " de " + run.length + (run.length === 1 ? " clipe trackeado" : " clipes trackeados") + " · " + bad + " com problema (veja a fila).", "err", true);
       play("Alert_FAIL.mp3");
+      notify("Fila terminada com problemas", ok + " de " + run.length + " · " + bad + " com problema. Veja a fila no painel.");
     } else {
-      setStatus("Pronto! " + ok + (ok === 1 ? " clipe trackeado" : " clipes trackeados") + " em **" + fmtTime(elapsed) + "**.", "ok", true);
+      showMission(clipsTxt(ok), fmtTime(elapsed));
       play("Alert_OK.mp3");
+      notify("Missão cumprida!", clipsTxt(ok) + " em " + fmtTime(elapsed) + ".");
     }
   }
 
@@ -362,6 +399,7 @@
       if (sel.seqW >= sel.seqH) throw new Error("A sequência ativa não é vertical (" + sel.seqW + "×" + sel.seqH + "). Use uma sequência 9:16, ex. 1080×1920.");
     } catch (e) { setStatus(e.message, "err"); return; }
     lastSel = sel;
+    $("queueList").innerHTML = "";
     queue = sel.clips.map(function (c) {
       return Object.assign(c, {
         state: c.skip ? "skip" : "queued", msg: c.skip || "", progress: 0, inRun: true,
@@ -442,7 +480,13 @@
         btn.title = "Atualizar para v" + latest.version;
       } else {
         latest = null; btn.classList.remove("has-update"); btn.title = "Verificar atualizações";
-        if (!silent) setStatus("Você já está na versão mais recente (v" + INFO.version + ").", "ok", true);
+        if (!silent) {
+          setStatus("Você já está na versão mais recente (v" + INFO.version + ").", "ok", true);
+          var nb = document.createElement("button");
+          nb.className = "btn secondary small notes-btn"; nb.textContent = "Ver notas da versão";
+          nb.addEventListener("click", function () { openNotes(); });
+          $("status").appendChild(nb);
+        }
       }
     } catch (e) {
       if (!silent) setStatus("Não consegui verificar atualizações (" + e.message + ").", "err");
@@ -540,6 +584,112 @@
   }
   $("restart").addEventListener("click", restartPremiere);
 
+  // ------------------------------------------------------------ notas da versao
+  // le o CHANGELOG.md do plugin: "## v1.2.3" abre uma versao, "- " e "  - " sao itens
+  function parseChangelog() {
+    var txt = "";
+    try { txt = fs.readFileSync(path.join(EXT, "CHANGELOG.md"), "utf8"); } catch (e) { return []; }
+    var out = [], cur = null;
+    txt.split(/\r?\n/).forEach(function (line) {
+      var m = /^##\s+v?([\d.]+)/.exec(line);
+      if (m) { cur = { version: m[1], lines: [] }; out.push(cur); return; }
+      if (cur && line.trim()) cur.lines.push(line);
+    });
+    return out;
+  }
+  function inlineMd(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`(.+?)`/g, "<b>$1</b>"); }
+  function versionHTML(v) {
+    var html = "", depth = -1;
+    v.lines.forEach(function (line) {
+      var m = /^(\s*)-\s+(.*)$/.exec(line);
+      if (!m) { html += (depth >= 0 ? "</ul>".repeat(depth + 1) : "") + "<p>" + inlineMd(line) + "</p>"; depth = -1; return; }
+      var d = m[1].length >= 2 ? 1 : 0;
+      while (depth < d) { html += "<ul>"; depth++; }
+      while (depth > d) { html += "</ul>"; depth--; }
+      html += "<li>" + inlineMd(m[2]) + "</li>";
+    });
+    while (depth >= 0) { html += "</ul>"; depth--; }
+    return html;
+  }
+  function openNotes() {
+    var all = parseChangelog();
+    var curr = all.filter(function (v) { return v.version === INFO.version; })[0] || all[0];
+    $("notesTitle").textContent = "Novidades da v" + (curr ? curr.version : INFO.version);
+    if (!curr) { $("notesBody").innerHTML = "<p>Notas não encontradas.</p>"; }
+    else {
+      var older = all.filter(function (v) { return v !== curr; });
+      $("notesBody").innerHTML = versionHTML(curr) + (older.length ?
+        '<details class="older"><summary>Versões anteriores</summary>' +
+        older.map(function (v) { return "<h4>v" + esc(v.version) + "</h4>" + versionHTML(v); }).join("") + "</details>" : "");
+    }
+    $("notesModal").classList.add("show");
+  }
+  function closeNotes() { $("notesModal").classList.remove("show"); }
+  $("closeNotes").addEventListener("click", closeNotes);
+  $("notesModal").addEventListener("mousedown", function (e) { if (e.target === $("notesModal")) closeNotes(); });
+  $("aboutNotes").addEventListener("click", function () { closeConfig(); openNotes(); });
+
+  // ------------------------------------------------------------ notificacao do windows
+  var AUMID = "LChedick.GrandTrackerAuto";
+  function psRun(script) {
+    var encoded = req("buffer").Buffer.from(script, "utf16le").toString("base64");
+    return exec("powershell", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded]);
+  }
+  function psStr(t) { return "'" + String(t).replace(/'/g, "''") + "'"; }
+  function xmlEsc(t) { return String(t).replace(/[<>&"']/g, function (c) { return { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" }[c]; }); }
+  var aumidReady = false;
+  async function ensureAumid() {
+    if (aumidReady) return;
+    var icon = path.join(EXT, "assets", "icons", "Track_accent.png");
+    await psRun([
+      "$k = 'HKCU:\\Software\\Classes\\AppUserModelId\\" + AUMID + "'",
+      "New-Item -Path $k -Force | Out-Null",
+      "Set-ItemProperty -Path $k -Name DisplayName -Value 'Grand Tracker Auto'",
+      "Set-ItemProperty -Path $k -Name IconUri -Value " + psStr(icon),
+      "Set-ItemProperty -Path $k -Name IconBackgroundColor -Value '00000000'"
+    ].join("; "));
+    aumidReady = true;
+  }
+  async function notify(title, body, force) {
+    if (!IS_WIN || (!force && !$("optNotify").checked)) return;
+    try {
+      await ensureAumid();
+      var xml = '<toast><visual><binding template="ToastGeneric"><text>' + xmlEsc(title) + "</text><text>" + xmlEsc(body) +
+        '</text></binding></visual><audio silent="true"/></toast>';
+      await psRun([
+        "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null",
+        "[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null",
+        "$x = New-Object Windows.Data.Xml.Dom.XmlDocument",
+        "$x.LoadXml(" + psStr(xml) + ")",
+        "[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('" + AUMID + "').Show([Windows.UI.Notifications.ToastNotification]::new($x))"
+      ].join("; "));
+    } catch (e) { addLog("notificação: " + e.message + "\n"); }
+  }
+  // le no registro se as notificacoes estao ligadas (geral e para o Grand Tracker Auto)
+  async function checkNotifyStatus() {
+    var el = $("notifStatus");
+    try {
+      var out = await psRun([
+        "$g = (Get-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications' -Name ToastEnabled -ErrorAction SilentlyContinue).ToastEnabled",
+        "$a = (Get-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\" + AUMID + "' -Name Enabled -ErrorAction SilentlyContinue).Enabled",
+        "Write-Output (\"$g|$a\")"
+      ].join("; "));
+      var parts = out.trim().split("|");
+      if (parts[0] === "0") { el.className = "notif-status err"; el.textContent = "✗ As notificações estão desligadas no Windows (Configurações → Sistema → Notificações)."; }
+      else if (parts[1] === "0") { el.className = "notif-status err"; el.textContent = "✗ O Windows está bloqueando as notificações do Grand Tracker Auto (Configurações → Sistema → Notificações)."; }
+      else { el.className = "notif-status ok"; el.textContent = "✓ Notificações do Windows ativadas. (Se o \"Não perturbe\" estiver ligado, o Windows pode segurar o aviso.)"; }
+    } catch (e) { el.className = "notif-status"; el.textContent = ""; }
+  }
+  if (!IS_WIN) $("notifBox").hidden = true;
+  $("openConfig").addEventListener("click", function () { if (IS_WIN) checkNotifyStatus(); });
+  $("testNotify").addEventListener("click", async function () {
+    $("testNotify").disabled = true;
+    await notify("Missão cumprida!", "Teste do Grand Tracker Auto: as notificações estão funcionando.", true);
+    await checkNotifyStatus();
+    $("testNotify").disabled = false;
+  });
+
   renderQueue();
+  if (load("seen", "") !== INFO.version) { save("seen", INFO.version); setTimeout(openNotes, 600); }
   if ($("optAutoUpd").checked) setTimeout(function () { checkUpdate(true); }, 1500);
 })();

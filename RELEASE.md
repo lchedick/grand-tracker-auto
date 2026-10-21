@@ -3,7 +3,7 @@
 1. Atualize a versão em **dois lugares**:
    - `GrandTrackerAuto/version.json` → `"version": "1.0.1"`
    - `GrandTrackerAuto/CSXS/manifest.xml` → `ExtensionBundleVersion` e `Version`
-2. Anote as mudanças no `CHANGELOG.md`.
+2. Anote as mudanças em `GrandTrackerAuto/CHANGELOG.md` (é o que aparece no pop-up de novidades do painel).
 3. Gere o zip: `python tools/build_release.py` → cria `dist/GrandTrackerAuto-v1.0.1.zip`.
 4. Faça commit e push.
 5. No GitHub: **Releases → Draft a new release**
