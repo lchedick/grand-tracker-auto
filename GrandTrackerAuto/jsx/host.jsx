@@ -74,6 +74,9 @@ function gta_getSelectedClips() {
                 else {
                     item.path = pi.getMediaPath();
                     if (!item.path) item.skip = "Sem arquivo de v\u00eddeo (gr\u00e1fico, t\u00edtulo ou cor).";
+                    try {
+                        if (pi.hasProxy && pi.hasProxy()) item.proxyPath = pi.getProxyPath();
+                    } catch (eP) {}
                 }
                 item.inPoint = c.inPoint.seconds;
                 item.outPoint = c.outPoint.seconds;
@@ -165,4 +168,29 @@ function gta_clearMotion() {
     } catch (e) {
         return gta_err("Erro ao limpar Motion: " + e.toString());
     }
+}
+
+// Seleciona so este clipe na timeline e leva a agulha ate o inicio dele
+function gta_selectClip(sequenceId, nodeId) {
+    try {
+        var seq = gta_findSequence(sequenceId);
+        if (!seq) return gta_err("A sequ\u00eancia n\u00e3o existe mais.");
+        var clip = gta_findClip(seq, nodeId);
+        if (!clip) return gta_err("O clipe n\u00e3o est\u00e1 mais na sequ\u00eancia.");
+        if (app.project.activeSequence !== seq) { try { app.project.activeSequence = seq; } catch (e0) {} }
+        var sel = seq.getSelection();
+        for (var i = 0; i < sel.length; i++) { try { sel[i].setSelected(false, false); } catch (e1) {} }
+        clip.setSelected(true, true);
+        try { seq.setPlayerPosition(clip.start.ticks); } catch (e2) {}
+        return gta_str({ ok: true });
+    } catch (e) {
+        return gta_err("N\u00e3o consegui selecionar o clipe: " + e.toString());
+    }
+}
+
+// Versao do Premiere (usado no diagnostico)
+function gta_info() {
+    try {
+        return gta_str({ version: String(app.version), build: String(app.build || ""), project: app.project ? String(app.project.path) : "" });
+    } catch (e) { return gta_err(e.toString()); }
 }

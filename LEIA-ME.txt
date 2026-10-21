@@ -24,26 +24,41 @@ Como usar
 
 Botoes e ajustes
 ----------------
+Trackear:       trackeia os clipes selecionados na timeline.
 Limpar Motion:  zera o Motion dos clipes selecionados (keyframes, posicao,
                 escala, rotacao, crop...), deixando o clipe limpo.
+Posicao do rosto: deixa o rosto no centro ou deslocado para um lado
+                (duplo clique no controle volta ao centro).
 Estilo:         "Rosto no centro" segue o rosto o tempo todo (padrao).
                 "Camera parada" so anda quando ele muda de lugar.
 Zona morta:     quanto ele pode se mexer antes da camera andar.
 Suavidade:      maior = movimentos de camera mais lentos.
 Cancelar fila:  para a fila na hora.
+Fila:           clique num clipe para encontra-lo na timeline. Se algum
+                falhar, use "Tentar de novo os que falharam".
+
+Configuracoes (engrenagem no topo)
+----------------------------------
+Qualidade:      Rapida (5 quadros/s), Normal (10) ou Precisa (15, imagem maior).
+Usar proxy:     se o clipe tiver proxy, analisa o proxy (mais rapido).
+Sons / Atualizacoes ao abrir: liga e desliga.
+Testar Python:  confere se o Python e as bibliotecas estao instalados.
+Copiar diagnostico: copia informacoes para pedir ajuda.
 Rodar de novo apaga os keyframes de Position anteriores do clipe.
 
 Atualizacoes
 ------------
-O painel avisa quando existe uma versao nova. Clique em "Atualizar" e,
+O painel avisa quando existe uma versao nova (bolinha verde no icone de
+atualizacao, no topo). Clique em "Atualizar" e,
 quando terminar, clique em "Reiniciar o Premiere agora"
 (ou feche e abra o Premiere).
-Tambem da para verificar em Configuracoes > Verificar atualizacoes.
+Para verificar na hora, clique no icone de atualizacao no topo.
 
 Problemas
 ---------
-"Python nao encontrado": em Configuracoes, troque "py -3" por "python".
+"Python nao encontrado": em Configuracoes, use "Testar Python" e, se
+precisar, troque "py -3" por "python".
 O painel nao aparece no menu: rode o instalar.bat de novo e reinicie o Premiere.
 
-Grand Tracker Auto | Desenvolvido por Lucas Chedick
+Grand Tracker Auto | Desenvolvido por Lucas Chedick | Licenca MIT
 https://github.com/lchedick/grand-tracker-auto

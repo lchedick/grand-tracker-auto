@@ -11,9 +11,12 @@ Feito para transformar pregações gravadas para o YouTube em cortes verticais p
   - *Rosto no centro*: segue o rosto continuamente.
   - *Câmera parada*: só anda quando a pessoa muda de lugar, com pans suaves.
 - **Zona morta** e **Suavidade** ajustáveis.
+- **Posição do rosto**: centralizado ou deslocado para um lado.
 - **Limpar Motion**: zera o Motion dos clipes selecionados.
+- **Fila inteligente**: clique num clipe para achá-lo na timeline; "Tentar de novo os que falharam".
+- **Qualidade da análise** (Rápida / Normal / Precisa) e uso automático de **proxy**.
 - **Avisos sonoros** ao terminar a fila (OK / FAIL).
-- **Atualização automática** pelas releases deste repositório.
+- **Atualização automática** pelas releases deste repositório, com botão para reiniciar o Premiere.
 
 ## Instalação (Windows)
 
@@ -51,4 +54,4 @@ Veja [RELEASE.md](RELEASE.md).
 
 ---
 
-Grand Tracker Auto | Desenvolvido por Lucas Chedick · Licenças de terceiros em [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+Grand Tracker Auto | Desenvolvido por Lucas Chedick · [Licença MIT](LICENSE) · Licenças de terceiros em [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)

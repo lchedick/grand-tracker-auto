@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.0.4
+
+- Cabeçalho novo: "GTA" + "Grand Tracker Auto V1", com botão de atualização (bolinha verde quando há versão nova) ao lado das Configurações.
+- Botões Trackear e Limpar Motion do mesmo tamanho (meio a meio).
+- Configurações em pop-up (fecha no X, no Esc ou clicando fora), com:
+  - Qualidade da análise: Rápida, Normal ou Precisa.
+  - Usar proxy quando existir (automático).
+  - Sons e verificação de atualizações ao abrir (liga/desliga).
+  - Testar Python, Copiar diagnóstico, Restaurar padrões e Sobre.
+- Posição do rosto: deixa o rosto no centro ou deslocado para um lado.
+- Fila: clique num clipe para selecioná-lo na timeline; botão "Tentar de novo os que falharam".
+- Licença MIT.
+
 ## v1.0.3
 
 - Mensagens de conclusão vermelhas com a mesma formatação das verdes (tamanho e centralização).

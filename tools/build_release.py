@@ -11,7 +11,7 @@ os.makedirs(os.path.join(ROOT, "dist"), exist_ok=True)
 out = os.path.join(ROOT, "dist", "GrandTrackerAuto-v%s.zip" % version)
 
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-    for name in ("instalar.bat", "LEIA-ME.txt"):
+    for name in ("instalar.bat", "LEIA-ME.txt", "LICENSE"):
         z.write(os.path.join(ROOT, name), name)
     for base, dirs, files in os.walk(PLUGIN):
         dirs[:] = [d for d in dirs if d != "__pycache__"]

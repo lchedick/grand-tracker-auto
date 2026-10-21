@@ -78,15 +78,16 @@ class PersonDetector:
 class FaceDetector:
     """YuNet (OpenCV)."""
 
-    def __init__(self):
+    def __init__(self, width=640):
+        self.width = width
         self.det = cv2.FaceDetectorYN.create(
-            os.path.join(MODELS, "yunet.onnx"), "", (640, 640), 0.6, 0.3, 50
+            os.path.join(MODELS, "yunet.onnx"), "", (width, width), 0.6, 0.3, 50
         )
 
     def detect(self, img):
         h, w = img.shape[:2]
-        s = 640.0 / w
-        small = cv2.resize(img, (640, int(round(h * s))))
+        s = float(self.width) / w
+        small = cv2.resize(img, (self.width, int(round(h * s))))
         self.det.setInputSize((small.shape[1], small.shape[0]))
         _, faces = self.det.detect(small)
         if faces is None:
@@ -95,7 +96,16 @@ class FaceDetector:
 
 
 # ---------------------------------------------------------------- analise
-def analyze(video, start, end, sample_fps=10.0, progress=True):
+# qualidade: quadros analisados por segundo, tamanho da imagem nos detectores
+# e altura minima (fracao do quadro) para considerar uma pessoa
+QUALITY = {
+    "rapida":  {"fps": 5.0,  "person": 416, "face": 640, "min_h": 0.25},
+    "normal":  {"fps": 10.0, "person": 416, "face": 640, "min_h": 0.25},
+    "precisa": {"fps": 15.0, "person": 640, "face": 960, "min_h": 0.12},
+}
+
+
+def analyze(video, start, end, q=QUALITY["normal"], progress=True):
     cap = cv2.VideoCapture(video)
     if not cap.isOpened():
         raise SystemExit("ERRO: não consegui abrir o vídeo: " + video)
@@ -108,8 +118,8 @@ def analyze(video, start, end, sample_fps=10.0, progress=True):
     if start > 0:
         cap.set(cv2.CAP_PROP_POS_MSEC, start * 1000.0)
 
-    persons, faces = PersonDetector(), FaceDetector()
-    step = max(1, int(round(fps / sample_fps)))
+    persons, faces = PersonDetector(q["person"]), FaceDetector(q["face"])
+    step = max(1, int(round(fps / q["fps"])))
     n_frames = int((end - start) * fps)
 
     times, xs = [], []
@@ -124,7 +134,7 @@ def analyze(video, start, end, sample_fps=10.0, progress=True):
             if not ok:
                 break
             t = fi / fps
-            x = locate(img, persons, faces, last_x, face_off)
+            x = locate(img, persons, faces, last_x, face_off, q["min_h"])
             if x is not None:
                 x, face_off = x
                 last_x = x
@@ -137,10 +147,10 @@ def analyze(video, start, end, sample_fps=10.0, progress=True):
     return np.array(times), np.array(xs, dtype=float), W, H, fps, start, end
 
 
-def locate(img, persons, faces, last_x, face_off):
+def locate(img, persons, faces, last_x, face_off, min_h=0.25):
     """Retorna (x_cabeca, offset_face_box) ou None."""
     H, W = img.shape[:2]
-    P = [p for p in persons.detect(img) if p[3] > H * 0.25]  # ignora gente pequena
+    P = [p for p in persons.detect(img) if p[3] > H * min_h]  # ignora gente pequena
     F = faces.detect(img)
 
     def face_in(box):
@@ -383,7 +393,11 @@ def main():
     ap.add_argument("--deadzone", type=float, default=-1,
                     help="padrao: 0.04 (rosto) ou 0.15 (operador)")
     ap.add_argument("--suavidade", type=float, default=1.0)
-    ap.add_argument("--fps", type=float, default=10.0)
+    ap.add_argument("--qualidade", choices=list(QUALITY), default="normal")
+    ap.add_argument("--posicao", type=float, default=0.0,
+                    help="posicao do rosto: -0.3 (esquerda) .. 0 (centro) .. 0.3 (direita), fracao do quadro")
+    ap.add_argument("--orig-video", default="",
+                    help="quando --video e um proxy: arquivo original (so para ler as dimensoes)")
     ap.add_argument("--preview", default="")
     ap.add_argument("--seq-w", type=float, default=1080)
     ap.add_argument("--seq-h", type=float, default=1920)
@@ -392,15 +406,28 @@ def main():
     a = ap.parse_args()
 
     log("Analisando vídeo...")
-    t, xs, W, H, fps, start, end = analyze(a.video, a.start, a.end or None, a.fps)
+    t, xs, W, H, fps, start, end = analyze(a.video, a.start, a.end or None, QUALITY[a.qualidade])
     found = int(np.sum(~np.isnan(xs)))
     if found == 0:
         raise SystemExit("ERRO: não encontrei ninguém no vídeo.")
+    used_proxy = False
+    if a.orig_video and os.path.abspath(a.orig_video) != os.path.abspath(a.video):
+        # analise feita no proxy: converte para as coordenadas do original
+        oc = cv2.VideoCapture(a.orig_video)
+        W0 = int(oc.get(cv2.CAP_PROP_FRAME_WIDTH)); H0 = int(oc.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        oc.release()
+        if W0 > 0 and H0 > 0:
+            xs = xs * (W0 / float(W))
+            W, H = W0, H0
+            used_proxy = True
     sr = 1.0 / np.median(np.diff(t))
     x = fill_and_smooth(xs, sr)
     # fator de escala do clipe na sequencia e largura visivel (px da origem)
     s = a.scale_percent / 100.0 if a.scale_percent > 0 else max(a.seq_w / W, a.seq_h / H)
     crop_w = min(W, a.seq_w / s)
+    # posicao do rosto: a camera mira um pouco ao lado para o rosto ficar deslocado
+    x_face = x
+    x = x - max(-0.4, min(0.4, a.posicao)) * crop_w
     if a.modo == "rosto":
         dz = 0.04 if a.deadzone < 0 else a.deadzone
         keys = follow_path(t, x, W, crop_w, dz, a.suavidade)
@@ -415,7 +442,7 @@ def main():
 
     # quanto tempo a cabeca fica perto da borda (controle de qualidade)
     cam = np.array([cam_at(keys, tt, smooth) for tt in t])
-    off = np.abs(x - cam) / (crop_w / 2)
+    off = np.abs(x_face - cam) / (crop_w / 2)
     data = {
         "video": a.video,
         "source_width": W,
@@ -428,6 +455,8 @@ def main():
         "edge_ratio": float(np.mean(off > 0.75)),
         "scale_percent": round(s * 100.0, 3),
         "modo": a.modo,
+        "qualidade": a.qualidade,
+        "used_proxy": used_proxy,
         "interp": 5 if smooth else 0,  # Premiere: 5 = Bezier, 0 = Linear
         "keys": [{"t": round(k[0], 3), "x": round(k[1], 2), "nx": round(pos_norm(k[1]), 6)}
                  for k in keys],
@@ -438,7 +467,7 @@ def main():
         json.dump(data, f)
     log("PROGRESS 1.0")
     log("OK %d keyframes" % len(keys))
-    if a.preview:
+    if a.preview and not used_proxy:
         log("Renderizando prévia...")
         render_preview(a.video, start, end, keys, W, H, a.preview, smooth)
         log("Prévia: " + a.preview)

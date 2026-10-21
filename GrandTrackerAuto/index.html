@@ -6,23 +6,32 @@
 <style>
   :root {
     --bg:#232323; --panel:#2a2a2a; --panel2:#1d1d1d; --line:#383838;
-    --text:#d4d4d4; --muted:#8c8c8c; --icon:#b3b3b3;
-    --accent:#2d8ceb; --accent-h:#4a9ff0; --err:#e5584f; --ok:#4caf72; --warn:#d9a23b;
+    --text:#d4d4d4; --muted:#8c8c8c;
+    --accent:#2d8ceb; --accent-h:#4a9ff0; --err:#e5584f; --ok:#4caf72; --ok-h:#5cc183; --warn:#d9a23b;
   }
   * { box-sizing:border-box; }
   html, body { margin:0; background:var(--bg); color:var(--text); font:12px/1.45 "Segoe UI", system-ui, sans-serif; }
   body { padding:10px 12px 0; display:flex; flex-direction:column; min-height:100vh; }
   main { flex:1; }
+  [hidden] { display:none !important; }
 
   .ico { display:inline-block; width:48px; height:48px; flex:none; object-fit:contain; }
   .ico.lg { width:54px; height:54px; }
+  .ico.sm { width:28px; height:28px; }
 
-  header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-  header h1 { flex:1; min-width:0; margin:0; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .iconbtn { background:none; border:0; padding:4px; border-radius:3px; color:var(--icon); cursor:pointer; display:flex; }
+  /* cabecalho */
+  header { display:flex; align-items:center; gap:6px; margin-bottom:10px; }
+  header h1 { flex:1; min-width:0; margin:0 0 0 2px; display:flex; flex-direction:column; line-height:1.15; white-space:nowrap; overflow:hidden; }
+  header h1 .t1 { font-size:17px; font-weight:700; letter-spacing:1px; color:#fff; }
+  header h1 .t2 { font-size:12px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; }
+  .iconbtn { position:relative; background:none; border:0; padding:3px; border-radius:4px; cursor:pointer; display:flex; }
   .iconbtn:hover { background:#333; }
-  .iconbtn:hover .ico, .btn.secondary:hover:not(:disabled) .ico { filter:brightness(1.35); }
-  .btn:disabled .ico { opacity:.45; }
+  .iconbtn:hover .ico { filter:brightness(1.35); }
+  .iconbtn .dot { position:absolute; top:5px; right:5px; width:11px; height:11px; border-radius:50%; background:var(--ok);
+                  box-shadow:0 0 0 2px var(--bg); display:none; }
+  .iconbtn.has-update .dot { display:block; }
+  .iconbtn.spin .ico { animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
 
   .update { display:none; align-items:center; gap:8px; background:#1e3628; border:1px solid #2f6a45; color:#cdeed9;
             border-radius:4px; padding:7px 8px; margin-bottom:10px; }
@@ -30,20 +39,35 @@
   .update span { flex:1; }
   .update button { background:var(--ok); color:#fff; border:0; border-radius:3px; padding:4px 9px; cursor:pointer; font-size:11px; font-weight:600; }
 
-  .actions { display:flex; flex-wrap:wrap; gap:6px; }
+  /* botoes */
   .btn { display:flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:4px; padding:6px 10px;
          font-size:12px; font-weight:600; cursor:pointer; color:#fff; background:var(--accent); }
   .btn:hover:not(:disabled) { background:var(--accent-h); }
-  .btn.primary { flex:1 1 230px; }
-  .btn.secondary.grow { flex:1 1 150px; }
   .btn.secondary { background:#3a3a3a; color:var(--text); }
   .btn.secondary:hover:not(:disabled) { background:#454545; }
+  .btn.secondary:hover:not(:disabled) .ico { filter:brightness(1.35); }
+  .btn.green { background:var(--ok); }
+  .btn.green:hover:not(:disabled) { background:var(--ok-h); }
   .btn:disabled { background:#3a3a3a; color:#777; cursor:default; }
+  .btn:disabled .ico { opacity:.45; }
+  .btn.full { width:100%; }
+  .btn.small { font-size:11.5px; padding:4px 10px; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .actions .btn { flex-direction:column; gap:2px; padding:8px 6px; font-size:12.5px; }
 
+  #status { min-height:16px; margin-top:8px; font-size:11.5px; }
+  #status.err { color:var(--err); } #status.ok { color:var(--ok); }
+  #status.big { font-size:17px; line-height:1.3; margin:10px 0 4px; text-align:center; }
+  #status b { font-weight:700; }
+  #restart { display:none; margin-top:8px; }
+  #restart.show { display:flex; }
+  .restart-hint { display:none; text-align:center; color:var(--muted); font-size:11px; margin-top:4px; }
+  #restart.show + .restart-hint { display:block; }
+
+  /* cartoes e campos */
   .card { background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:10px; margin:10px 0; }
   .lbl { display:flex; align-items:center; gap:8px; color:var(--muted); margin:2px 0 5px; }
   .field + .field { margin-top:12px; }
-
   .seg { display:flex; background:var(--panel2); border:1px solid var(--line); border-radius:4px; padding:2px; gap:2px; }
   .seg button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:3px;
                 background:none; color:var(--muted); padding:6px 4px; cursor:pointer; font-size:11.5px; }
@@ -51,30 +75,33 @@
   .seg button.on { background:#3a3a3a; color:#fff; }
   .seg .on-v, .seg button.on .off-v { display:none; }
   .seg button.on .on-v { display:inline-block; }
+  .seg.text button { padding:7px 4px; }
 
   .row { display:flex; align-items:center; gap:8px; }
   input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:16px; background:transparent; margin:0; }
   input[type=range]::-webkit-slider-runnable-track { height:3px; border-radius:2px;
     background:linear-gradient(var(--accent),var(--accent)) 0/var(--p,50%) 100% no-repeat, #4a4a4a; }
+  input[type=range].center::-webkit-slider-runnable-track {
+    background:linear-gradient(var(--accent),var(--accent)) var(--from,50%) 0/var(--w,0%) 100% no-repeat, #4a4a4a; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
     background:#e6e6e6; margin-top:-4.5px; border:0; box-shadow:0 0 0 1px #00000055; }
   input[type=range]:hover::-webkit-slider-thumb { background:#fff; }
-  .val { width:38px; text-align:right; font-variant-numeric:tabular-nums; color:var(--text); }
+  .val { min-width:52px; text-align:right; font-variant-numeric:tabular-nums; color:var(--text); white-space:nowrap; }
   .hint { color:var(--muted); font-size:11px; margin-top:3px; }
   .check { display:flex; gap:6px; align-items:center; margin-top:12px; cursor:pointer; }
 
   /* fila */
   .qhead { display:flex; align-items:center; gap:6px; color:var(--muted); }
   .qhead .count { color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
-  [hidden] { display:none !important; }
   .qhead .eta { margin-left:auto; display:flex; align-items:center; gap:4px; font-variant-numeric:tabular-nums; }
   .bar { height:4px; background:var(--panel2); border-radius:2px; overflow:hidden; }
   .bar > div { height:100%; width:0; background:var(--accent); transition:width .25s; }
   .overall { margin:8px 0 6px; }
   #queueList { list-style:none; margin:0; padding:0; max-height:380px; overflow:auto; }
   #queueList li { display:grid; grid-template-columns:48px 1fr auto; column-gap:8px; row-gap:3px; align-items:center;
-                  padding:6px 2px; border-top:1px solid var(--line); }
+                  padding:6px 4px; border-top:1px solid var(--line); border-radius:3px; cursor:pointer; }
   #queueList li:first-child { border-top:0; }
+  #queueList li:hover { background:#323232; }
   #queueList .name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #queueList .st { color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
   #queueList .sub { grid-column:2 / 4; }
@@ -85,62 +112,74 @@
   #queueList li.cancel { opacity:.6; }
   @keyframes pulse { 50% { opacity:.35; } }
   .empty { color:var(--muted); font-size:11px; padding:4px 0; }
-  #cancel { display:none; margin-top:8px; width:100%; }
-  #cancel.show { display:flex; }
-
-  #status { min-height:16px; margin-top:8px; font-size:11.5px; }
-  #status.big { font-size:17px; line-height:1.3; margin:10px 0 4px; text-align:center; }
-  #restart { display:none; width:100%; margin-top:8px; background:var(--ok); }
-  #restart:hover:not(:disabled) { background:#5cc183; }
-  #restart.show { display:flex; }
-  .restart-hint { display:none; text-align:center; color:var(--muted); font-size:11px; margin-top:4px; }
-  #restart.show + .restart-hint { display:block; }
-  #updateInfo.new { color:var(--ok); }
-  #status b { font-weight:700; }
-  #status.err { color:var(--err); } #status.ok { color:var(--ok); }
-
-  details summary { cursor:pointer; color:var(--muted); display:flex; align-items:center; gap:6px; list-style:none; }
-  details summary::-webkit-details-marker { display:none; }
-  details[open] summary { margin-bottom:8px; }
-  input[type=text] { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:3px; padding:5px 6px; }
-  pre { white-space:pre-wrap; word-break:break-all; font-size:10px; color:var(--muted); max-height:110px; overflow:auto; margin:8px 0 0;
-        background:var(--panel2); border-radius:3px; padding:6px; }
-  pre:empty { display:none; }
+  .qbtns { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
 
   footer { color:#6f6f6f; font-size:10.5px; text-align:center; padding:10px 0; border-top:1px solid var(--line); margin-top:4px; }
+
+  /* configuracoes (pop-up) */
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:flex-start; justify-content:center;
+           padding:24px 10px; z-index:10; overflow:auto; }
+  .modal.show { display:flex; }
+  .sheet { width:100%; max-width:440px; background:var(--bg); border:1px solid #444; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+  .sheet-head { display:flex; align-items:center; gap:8px; padding:8px 8px 8px 12px; border-bottom:1px solid var(--line); }
+  .sheet-head h2 { flex:1; margin:0; font-size:13px; font-weight:600; }
+  .close { background:none; border:0; color:var(--muted); font-size:22px; line-height:1; cursor:pointer; padding:2px 8px; border-radius:4px; }
+  .close:hover { background:#333; color:#fff; }
+  .sheet-body { padding:4px 12px 12px; }
+  .sec { padding:10px 0; border-bottom:1px solid var(--line); }
+  .sec:last-child { border-bottom:0; }
+  .sec h3 { margin:0 0 8px; font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); }
+  .switch { display:flex; align-items:center; gap:10px; padding:5px 0; cursor:pointer; }
+  .switch span { flex:1; }
+  .switch input { -webkit-appearance:none; appearance:none; width:30px; height:16px; border-radius:8px; background:#4a4a4a;
+                  position:relative; cursor:pointer; flex:none; margin:0; transition:background .15s; }
+  .switch input::after { content:""; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:#ddd; transition:left .15s; }
+  .switch input:checked { background:var(--accent); }
+  .switch input:checked::after { left:16px; background:#fff; }
+  input[type=text] { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:3px; padding:5px 6px; }
+  .inline { display:flex; gap:6px; align-items:center; }
+  .inline input { flex:1; }
+  .result { font-size:11.5px; margin-top:6px; min-height:16px; }
+  .result.ok { color:var(--ok); } .result.err { color:var(--err); }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .about { color:var(--muted); font-size:11.5px; line-height:1.6; }
+  .about b { color:var(--text); }
+  .link { color:var(--accent-h); cursor:pointer; text-decoration:underline; }
+  details.log summary { cursor:pointer; color:var(--muted); font-size:11px; margin-top:8px; }
+  pre { white-space:pre-wrap; word-break:break-all; font-size:10px; color:var(--muted); max-height:140px; overflow:auto; margin:6px 0 0;
+        background:var(--panel2); border-radius:3px; padding:6px; }
 </style>
 </head>
 <body>
 <main>
   <header>
     <img class="ico lg" src="assets/icons/Track_accent.png" alt="">
-    <h1>GTA • Grand Tracker Auto V1</h1>
+    <h1 title="GTA • Grand Tracker Auto V1"><span class="t1">GTA</span><span class="t2">Grand Tracker Auto V1</span></h1>
+    <button class="iconbtn" id="hdrUpdate" title="Verificar atualizações"><img class="ico" src="assets/icons/Update.png" alt=""><span class="dot"></span></button>
     <button class="iconbtn" id="openConfig" title="Configurações"><img class="ico" src="assets/icons/Config.png" alt=""></button>
   </header>
 
   <div class="update" id="updateBar">
-    <img class="ico" src="assets/icons/Update_on.png" alt="">
+    <img class="ico sm" src="assets/icons/Update_on.png" alt="">
     <span id="updateText">Nova versão disponível</span>
     <button id="updateBtn">Atualizar</button>
   </div>
 
   <div class="actions">
-    <button class="btn primary" id="run" title="Trackear os clipes selecionados">
-      <img class="ico" src="assets/icons/Track_on.png" alt="">Trackear selecionados
-    </button>
-    <button class="btn secondary grow" id="clear" title="Zera o Motion dos clipes selecionados (keyframes, posição, escala…)">
-      <img class="ico" src="assets/icons/ClearMotion.png" alt="">Limpar Motion
-    </button>
+    <button class="btn" id="run" title="Trackear os clipes selecionados na timeline">
+      <img class="ico" src="assets/icons/Track_on.png" alt="">Trackear</button>
+    <button class="btn secondary" id="clear" title="Zera o Motion dos clipes selecionados (keyframes, posição, escala…)">
+      <img class="ico" src="assets/icons/ClearMotion.png" alt="">Limpar Motion</button>
   </div>
   <div id="status"></div>
-  <button class="btn" id="restart"><img class="ico" src="assets/icons/Update_on.png" alt="">Reiniciar o Premiere agora</button>
+  <button class="btn green full" id="restart"><img class="ico sm" src="assets/icons/Update_on.png" alt="">Reiniciar o Premiere agora</button>
   <div class="restart-hint">O Premiere vai fechar (pedindo para salvar, se precisar) e abrir de novo com o mesmo projeto.</div>
 
   <div class="card">
     <div class="field">
       <div class="lbl">Estilo</div>
       <div class="seg" id="modo">
-        <button data-v="rosto" title="Segue o rosto o tempo todo, mantendo-o no centro">
+        <button data-v="rosto" title="Segue o rosto o tempo todo">
           <img class="ico off-v" src="assets/icons/StyleFace.png" alt=""><img class="ico on-v" src="assets/icons/StyleFace_on.png" alt="">Rosto no centro</button>
         <button data-v="operador" title="Fica parada e só anda quando ele muda de lugar">
           <img class="ico off-v" src="assets/icons/StyleStatic.png" alt=""><img class="ico on-v" src="assets/icons/StyleStatic_on.png" alt="">Câmera parada</button>
@@ -159,6 +198,12 @@
       <div class="hint">Maior = movimentos de câmera mais lentos.</div>
     </div>
 
+    <div class="field">
+      <div class="lbl"><img class="ico" src="assets/icons/HorizontalTrack.png" alt="">Posição do rosto</div>
+      <div class="row"><input id="pos" class="center" type="range" min="-30" max="30" step="1"><span class="val" id="posv"></span></div>
+      <div class="hint">Desloca o rosto para um lado. Útil quando vai ter texto ou gráfico do outro. Duplo clique volta ao centro.</div>
+    </div>
+
     <label class="check"><input id="fill" type="checkbox"><span>Ajustar escala para preencher o 9:16</span></label>
   </div>
 
@@ -170,22 +215,72 @@
     </div>
     <div class="bar overall"><div id="overall"></div></div>
     <ul id="queueList"></ul>
-    <div class="empty" id="qempty">Selecione os clipes na timeline 9:16 e clique em Trackear.</div>
-    <button class="btn secondary" id="cancel"><img class="ico" src="assets/icons/CancelQueue.png" alt="">Cancelar fila</button>
+    <div class="empty" id="qempty">Selecione os clipes na timeline 9:16 e clique em Trackear. Depois, clique num clipe da fila para encontrá-lo na timeline.</div>
+    <div class="qbtns">
+      <button class="btn full" id="retry" hidden><img class="ico sm" src="assets/icons/Update_on.png" alt="">Tentar de novo os que falharam</button>
+      <button class="btn secondary full" id="cancel" hidden><img class="ico sm" src="assets/icons/CancelQueue.png" alt="">Cancelar fila</button>
+    </div>
   </div>
-
-  <details class="card" id="config">
-    <summary><img class="ico" src="assets/icons/Config.png" alt="">Configurações</summary>
-    <div class="lbl">Comando do Python</div>
-    <input id="py" type="text">
-    <div class="hint">Windows: "py -3" ou "python". Mac: "python3".</div>
-    <button class="btn secondary" id="checkUpdate" style="width:100%;margin-top:10px">
-      <img class="ico" src="assets/icons/Update.png" alt="">Verificar atualizações</button>
-    <div class="hint" id="updateInfo"></div>
-    <pre id="log"></pre>
-  </details>
 </main>
-<footer id="footer">Grand Tracker Auto | v1.0.3 | Desenvolvido por Lucas Chedick</footer>
+<footer id="footer">Grand Tracker Auto | v1.0.4 | Desenvolvido por Lucas Chedick</footer>
+
+<div class="modal" id="config">
+  <div class="sheet" role="dialog" aria-label="Configurações">
+    <div class="sheet-head">
+      <img class="ico sm" src="assets/icons/Config.png" alt="">
+      <h2>Configurações</h2>
+      <button class="close" id="closeConfig" title="Fechar (Esc)">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="sec">
+        <h3>Análise</h3>
+        <div class="lbl">Qualidade</div>
+        <div class="seg text" id="qual">
+          <button data-v="rapida">Rápida</button>
+          <button data-v="normal">Normal</button>
+          <button data-v="precisa">Precisa</button>
+        </div>
+        <div class="hint" id="qualHint"></div>
+        <label class="switch"><span>Usar proxy quando existir<br><small class="hint">Analisa o proxy (mais rápido). Os keyframes valem para o original.</small></span><input type="checkbox" id="optProxy"></label>
+      </div>
+
+      <div class="sec">
+        <h3>Avisos</h3>
+        <label class="switch"><span>Sons ao terminar a fila</span><input type="checkbox" id="optSounds"></label>
+        <label class="switch"><span>Verificar atualizações ao abrir</span><input type="checkbox" id="optAutoUpd"></label>
+      </div>
+
+      <div class="sec">
+        <h3>Python</h3>
+        <div class="lbl">Comando</div>
+        <div class="inline"><input id="py" type="text"><button class="btn secondary small" id="testPy">Testar Python</button></div>
+        <div class="hint">Windows: "py -3" ou "python". Mac: "python3".</div>
+        <div class="result" id="pyResult"></div>
+      </div>
+
+      <div class="sec">
+        <h3>Suporte</h3>
+        <div class="two">
+          <button class="btn secondary small" id="copyDiag">Copiar diagnóstico</button>
+          <button class="btn secondary small" id="resetDefaults">Restaurar padrões</button>
+        </div>
+        <div class="result" id="supportResult"></div>
+        <details class="log"><summary>Ver log</summary><pre id="log"></pre></details>
+      </div>
+
+      <div class="sec">
+        <h3>Sobre</h3>
+        <div class="about">
+          <b>GTA • Grand Tracker Auto</b> <span id="aboutVer"></span><br>
+          Desenvolvido por <b>Lucas Chedick</b><br>
+          <span class="link" id="ghLink">github.com/lchedick/grand-tracker-auto</span><br>
+          Licença MIT · Modelos: YOLOX (Apache-2.0) e YuNet (MIT)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="js/main.js"></script>
 </body>
 </html>
