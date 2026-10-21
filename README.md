@@ -17,7 +17,7 @@ Feito para transformar pregações gravadas para o YouTube em cortes verticais p
 - **Atualização automática** pelas releases deste repositório, com notas da versão e botão para reiniciar o Premiere.
 - **Tamanho da interface** ajustável (Pequena, Média ou Grande).
 
-## Instalação
+## Instalação [Mac e Windows]
 
 1. Baixe o zip da [última release](https://github.com/lchedick/grand-tracker-auto/releases/latest) e descompacte.
 2. Feche o Premiere e rode o instalador:
