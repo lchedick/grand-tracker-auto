@@ -55,6 +55,14 @@
   .actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   .actions.stack { grid-template-columns:1fr; }
   .actions.stack .btn { flex-direction:row; gap:10px; }
+  .styles .stylebtn { color:var(--muted); font-weight:500; }
+  .styles .stylebtn.on { background:#22364a; color:#fff; font-weight:600; box-shadow:inset 0 0 0 2px var(--accent); }
+  .styles .on-v, .styles .stylebtn.on .off-v { display:none; }
+  .styles .stylebtn.on .on-v { display:inline-block; }
+  .qrow { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  #pause.paused { background:#3a2f17; color:var(--warn); }
+  .notes .date { color:var(--muted); font-weight:400; font-size:11.5px; }
+  .notes-sub { color:var(--muted); font-size:11.5px; margin:-2px 0 8px; }
 
   /* recolhiveis */
   details > summary { list-style:none; cursor:pointer; user-select:none; }
@@ -62,7 +70,7 @@
   .chev { display:inline-block; width:12px; color:var(--muted); transition:transform .15s; margin-right:4px; }
   details[open] > summary .chev { transform:rotate(90deg); }
   .more { margin-top:12px; border-top:1px solid var(--line); padding-top:8px; }
-  .more > summary { color:var(--muted); font-size:12px; padding:2px 0; display:flex; align-items:center; }
+  .more > summary { color:var(--muted); font-size:12px; padding:2px 0; display:flex; align-items:center; white-space:nowrap; }
   .more > summary .sum { margin-left:auto; font-size:11px; color:#6f6f6f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-left:8px; }
   .more[open] > summary .sum { display:none; }
   .conf { display:inline-block; font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:9px; margin-right:6px; }
@@ -234,11 +242,11 @@
   <div class="card">
     <div class="field">
       <div class="lbl">Estilo</div>
-      <div class="seg" id="modo">
-        <button data-v="rosto" title="Segue o rosto o tempo todo">
-          <img class="ico off-v" src="assets/icons/StyleFace.png" alt=""><img class="ico on-v" src="assets/icons/StyleFace_on.png" alt="">Rosto no centro</button>
-        <button data-v="operador" title="Fica parada e só anda quando ele muda de lugar">
-          <img class="ico off-v" src="assets/icons/StyleStatic.png" alt=""><img class="ico on-v" src="assets/icons/StyleStatic_on.png" alt="">Câmera parada</button>
+      <div class="actions styles" id="modo">
+        <button class="btn secondary stylebtn" data-v="rosto" title="Acompanha o rosto o tempo todo">
+          <img class="ico off-v" src="assets/icons/StyleFace.png" alt=""><img class="ico on-v" src="assets/icons/StyleFace_on.png" alt="">Trackear rosto</button>
+        <button class="btn secondary stylebtn" data-v="operador" title="Ignora o balanço e só anda quando o assunto muda de lugar">
+          <img class="ico off-v" src="assets/icons/StyleStatic.png" alt=""><img class="ico on-v" src="assets/icons/StyleStatic_on.png" alt="">Trackear corpo</button>
       </div>
     </div>
 
@@ -247,7 +255,7 @@
     <div class="field">
       <div class="lbl"><img class="ico" src="assets/icons/DeadZone.png" alt="">Zona morta</div>
       <div class="row"><input id="dz" type="range" min="0" max="35"><span class="val" id="dzv"></span></div>
-      <div class="hint">Quanto ele pode se mexer antes da câmera andar.</div>
+      <div class="hint">Quanto o assunto pode se mexer antes da câmera andar.</div>
     </div>
 
     <div class="field">
@@ -258,7 +266,7 @@
 
     <div class="field">
       <div class="lbl"><img class="ico" src="assets/icons/HorizontalTrack.png" alt="">Posição do rosto</div>
-      <div class="row"><input id="pos" class="center" type="range" min="-30" max="30" step="1"><span class="val" id="posv"></span></div>
+      <div class="row"><input id="pos" type="range" min="-30" max="30" step="1"><span class="val" id="posv"></span></div>
       <div class="hint">Desloca o rosto para um lado. Útil quando vai ter texto ou gráfico do outro. Duplo clique volta ao centro.</div>
     </div>
 
@@ -277,11 +285,14 @@
     <div class="empty" id="qempty">Selecione os clipes na timeline 9:16 e clique em Trackear. Depois, clique num clipe da fila para encontrá-lo na timeline.</div>
     <div class="qbtns">
       <button class="btn full" id="retry" hidden><img class="ico sm" src="assets/icons/Update_on.png" alt="">Tentar de novo os que falharam</button>
-      <button class="btn secondary full" id="cancel" hidden><img class="ico sm" src="assets/icons/CancelQueue.png" alt="">Cancelar fila</button>
+      <div class="qrow" id="runBtns" hidden>
+        <button class="btn secondary" id="pause"><img class="ico sm" src="assets/icons/Time.png" alt=""><span id="pauseTxt">Pausar fila</span></button>
+        <button class="btn secondary" id="cancel"><img class="ico sm" src="assets/icons/CancelQueue.png" alt="">Cancelar fila</button>
+      </div>
     </div>
   </div>
 </main>
-<footer id="footer">Grand Tracker Auto | v1.0.8 | Desenvolvido por Lucas Chedick</footer>
+<footer id="footer">Grand Tracker Auto | v1.0.9 | Desenvolvido por Lucas Chedick</footer>
 
 <div class="modal" id="config">
   <div class="sheet" role="dialog" aria-label="Configurações">
@@ -305,7 +316,12 @@
 
       <div class="sec">
         <h3>Avisos</h3>
-        <label class="switch"><span>Sons ao terminar a fila</span><input type="checkbox" id="optSounds"></label>
+        <label class="switch"><span>Sons</span><input type="checkbox" id="optSounds"></label>
+        <div class="sound-row"><span class="lbl">Tocar</span></div>
+        <div class="seg text" id="soundMode">
+          <button data-v="clip">A cada clipe</button>
+          <button data-v="queue">Ao fim da fila</button>
+        </div>
         <div class="sound-row">
           <span class="lbl">Volume</span>
           <input id="vol" type="range" min="0" max="100" step="5"><span class="val" id="volv"></span>
@@ -373,7 +389,7 @@
       <h2 id="notesTitle">Novidades</h2>
       <button class="close" id="closeNotes" title="Fechar (Esc)">×</button>
     </div>
-    <div class="sheet-body"><div class="notes" id="notesBody"></div></div>
+    <div class="sheet-body"><div class="notes-sub" id="notesDate"></div><div class="notes" id="notesBody"></div></div>
   </div>
 </div>
 

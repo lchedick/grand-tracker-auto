@@ -2,7 +2,7 @@
 ===========================
 
 Painel para Adobe Premiere Pro que reenquadra vídeos 16:9 em 9:16
-seguindo o pregador, com keyframes de Position.
+seguindo o assunto (a pessoa em cena), com keyframes de Position.
 
 
 INSTALAÇÃO - WINDOWS
@@ -34,12 +34,13 @@ Configurações > Suporte > Copiar diagnóstico e envie para o Lucas.
 
 COMO USAR
 ---------
-1. Crie uma sequência vertical (1080x1920) com os trechos do culto.
+1. Crie uma sequência vertical (1080x1920) com os trechos do vídeo.
    Importante: os clipes NÃO podem estar com "Scale to Frame Size" ligado.
 2. Selecione um ou mais clipes na timeline.
 3. Clique em "Trackear".
    A fila mostra cada clipe ([1/N]), a barra de progresso e o tempo
-   estimado. Se um clipe falhar, os outros continuam.
+   estimado. Se um clipe falhar, os outros continuam. No Windows, o
+   ícone do Premiere na barra de tarefas também mostra o progresso.
 4. Os keyframes aparecem em Effect Controls > Motion > Position.
 
 
@@ -48,17 +49,20 @@ TELA PRINCIPAL
 Trackear:          trackeia os clipes selecionados na timeline.
 Limpar Motion:     zera o Motion dos clipes selecionados (keyframes,
                    posição, escala, rotação, crop...).
-Estilo:            "Rosto no centro" segue o rosto o tempo todo.
-                   "Câmera parada" só anda quando ele muda de lugar.
+Estilo:            "Trackear rosto" acompanha o rosto o tempo todo.
+                   "Trackear corpo" ignora o balanço e só anda quando
+                   o assunto muda de lugar.
 Fila:              clique num clipe para encontrá-lo na timeline.
                    Se algum falhar, use "Tentar de novo os que falharam".
-                   O selo (ex.: 98%) mostra em quanto do tempo o pregador
+                   O selo (ex.: 98%) mostra em quanto do tempo o assunto
                    foi encontrado: verde está ótimo, amarelo ou vermelho
                    vale conferir.
+Pausar fila:       o clipe atual termina e a fila espera até você
+                   clicar em "Continuar".
 Cancelar fila:     para a fila na hora.
 
 Em "Mais opções":
-Zona morta:        quanto ele pode se mexer antes da câmera andar.
+Zona morta:        quanto o assunto pode se mexer antes da câmera andar.
 Suavidade:         maior = movimentos de câmera mais lentos.
 Posição do rosto:  deixa o rosto no centro ou deslocado para um lado
                    (duplo clique no controle volta ao centro).
@@ -71,7 +75,8 @@ CONFIGURAÇÕES (engrenagem no topo)
 ----------------------------------
 Qualidade:         Rápida, Normal ou Precisa.
 Usar proxy:        se o clipe tiver proxy, analisa o proxy (mais rápido).
-Sons:              liga/desliga, volume e botões para testar.
+Sons:              liga/desliga, tocar a cada clipe ou ao fim da fila,
+                   volume e botões para testar.
 Notificação:       aviso do sistema quando a fila termina (por padrão,
                    só quando o Premiere não está em primeiro plano).
 Atualizações:      verificar ao abrir (liga/desliga).

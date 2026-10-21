@@ -93,11 +93,11 @@
   function load(k, d) { try { var v = localStorage.getItem("gta_" + k); return v === null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem("gta_" + k, v); } catch (e) {} }
   var DEF = { modo: "rosto", dz_rosto: "0", dz_operador: "0", sv: "5", pos: "0", fill: "1",
-              qual: "normal", proxy: "1", sounds: "1", autoupd: "1", vol: "100", notify: "1", ui: "1", fgonly: "1" };
+              qual: "normal", proxy: "1", sounds: "1", autoupd: "1", vol: "100", notify: "1", ui: "1", fgonly: "1", soundmode: "queue" };
   var QUAL_HINT = {
-    rapida: "Analisa 5 quadros por segundo. Cerca de 1,4× mais rápida. Boa para pregador mais parado.",
+    rapida: "Analisa 5 quadros por segundo. Cerca de 1,4× mais rápida. Boa para quando o assunto se mexe pouco.",
     normal: "Analisa 10 quadros por segundo. O equilíbrio para o dia a dia.",
-    precisa: "Analisa 15 quadros por segundo em imagem maior. Cerca de 2,3× mais lenta. Para plano aberto ou pregador pequeno na tela."
+    precisa: "Analisa 15 quadros por segundo em imagem maior. Cerca de 2,3× mais lenta. Para plano aberto ou assunto pequeno na tela."
   };
   var modo, qual;
 
@@ -110,11 +110,13 @@
   }
   // botoes Trackear / Limpar um embaixo do outro quando o painel estiver estreito
   function fitActions() {
-    var a = document.querySelector(".actions");
     var z = Number(load("ui", "1")) || 1;
-    if (a) a.classList.toggle("stack", window.innerWidth / z - 24 < 270);
+    var narrow = window.innerWidth / z - 24 < 270;
+    each(document.querySelectorAll(".actions"), function (a) { a.classList.toggle("stack", narrow); });
   }
   window.addEventListener("resize", fitActions);
+  var soundMode = "queue";
+  function setSoundMode(v) { soundMode = v; save("soundmode", v); setSeg("soundMode", v); }
   function setQual(q) { qual = q; save("qual", q); setSeg("qual", q); $("qualHint").textContent = QUAL_HINT[q]; }
 
   function paintRange(el) { el.style.setProperty("--p", ((el.value - el.min) / (el.max - el.min) * 100) + "%"); }
@@ -126,7 +128,7 @@
   }
   function posLabel(v) { v = Number(v); return v === 0 ? "Centro" : v < 0 ? "← " + (-v) + "%" : v + "% →"; }
   function refresh() {
-    paintRange($("dz")); paintRange($("sv")); paintCenter($("pos"));
+    paintRange($("dz")); paintRange($("sv")); paintRange($("pos"));
     $("dzv").textContent = $("dz").value + "%";
     $("svv").textContent = (Number($("sv").value) / 10).toFixed(1);
     $("posv").textContent = posLabel($("pos").value);
@@ -152,11 +154,13 @@
     $("optNotify").checked = load("notify", DEF.notify) === "1";
     $("optFgOnly").checked = load("fgonly", DEF.fgonly) === "1";
     setQual(load("qual", DEF.qual));
+    setSoundMode(load("soundmode", DEF.soundmode));
     setUiScale(load("ui", DEF.ui));
     setModo(load("modo", DEF.modo));
   }
   $("modo").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b && !busy) setModo(b.dataset.v); });
   $("qual").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setQual(b.dataset.v); });
+  $("soundMode").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setSoundMode(b.dataset.v); });
   $("uiScale").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setUiScale(b.dataset.v); });
   // lembra quais secoes recolhiveis estavam abertas
   ["moreOpts", "foldPy", "foldSup"].forEach(function (id) {
@@ -202,7 +206,7 @@
   });
 
   $("resetDefaults").addEventListener("click", function () {
-    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd", "vol", "notify", "ui", "fgonly"].forEach(function (k) { save(k, DEF[k]); });
+    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd", "vol", "notify", "ui", "fgonly", "soundmode"].forEach(function (k) { save(k, DEF[k]); });
     applyPrefs();
     $("supportResult").className = "result ok";
     $("supportResult").textContent = "✓ Padrões restaurados (o comando do Python foi mantido).";
@@ -240,7 +244,7 @@
     var st = it.state === "running" ? Math.round(it.progress * 100) + "%" : ST[it.state];
     if (it.state === "ok" && typeof it.conf === "number") {
       var pc = Math.round(it.conf * 100), lv = pc >= 90 ? "hi" : pc >= 70 ? "mid" : "lo";
-      st = '<span class="conf ' + lv + '" title="O pregador foi encontrado em ' + pc + '% do tempo">' + pc + "%</span>" + st;
+      st = '<span class="conf ' + lv + '" title="O assunto foi encontrado em ' + pc + '% do tempo">' + pc + "%</span>" + st;
     }
     var sub = it.state === "running" ? '<div class="bar sub"><div style="width:' + Math.round(it.progress * 100) + '%"></div></div>' : "";
     var msg = it.msg ? '<div class="msg">' + esc(it.msg) + "</div>" : "";
@@ -278,6 +282,20 @@
       prog += (it.state === "running" ? it.progress : (it.state === "queued" ? 0 : 1)) * w;
     });
     $("overall").style.width = (tot ? Math.round(prog / tot * 100) : 0) + "%";
+    overallFrac = tot ? prog / tot : 0;
+    activeCount = active.length; activeIdx = idx >= 0 ? idx + 1 : done;
+    if (busy) updateTitleAndTaskbar();
+  }
+  var overallFrac = 0, activeCount = 0, activeIdx = 0;
+  var TITLE = "GTA • Grand Tracker Auto V1";
+  function setPanelTitle(t) {
+    var full = t ? "GTA • " + t : TITLE;
+    document.title = full;
+    try { cep.invokeSync("setWindowTitle", full); } catch (e) {}
+  }
+  function updateTitleAndTaskbar() {
+    setPanelTitle((paused ? "pausado " : "") + activeIdx + "/" + activeCount);
+    taskbar.set(overallFrac);
   }
 
   $("queueList").addEventListener("click", async function (e) {
@@ -297,6 +315,7 @@
       if (it.state === "running") processed += it.dur * it.progress;
       else if (it.state !== "queued") processed += it.dur;
     });
+    if (paused) { $("etaText").textContent = "pausada"; return; }
     var elapsed = (Date.now() - eta.start) / 1000;
     if (!busy || elapsed < 3 || processed <= 0) { $("eta").hidden = !busy; $("etaText").textContent = busy ? "calculando…" : ""; return; }
     $("eta").hidden = false;
@@ -335,7 +354,7 @@
       var video = it.path, useProxy = false;
       if ($("optProxy").checked && it.proxyPath && fs.existsSync(it.proxyPath)) { video = it.proxyPath; useProxy = true; }
       var args = py.args.concat([
-        path.join(EXT, "engine", "seguir_pregador.py"),
+        path.join(EXT, "engine", "rastreador.py"),
         "--video", video, "--start", String(it.inPoint), "--end", String(it.outPoint),
         "--out", outFile, "--modo", modo, "--qualidade", qual,
         "--deadzone", String(Number($("dz").value) / 100),
@@ -390,27 +409,40 @@
   function setBusy(b) {
     busy = b;
     ["run", "clear", "updateBtn", "hdrUpdate", "retry"].forEach(function (id) { $(id).disabled = b; });
-    $("cancel").hidden = !b; $("cancel").disabled = false;
+    $("runBtns").hidden = !b; $("cancel").disabled = false;
     if (b) $("retry").hidden = true;
+    if (!b) { paused = false; $("pause").classList.remove("paused"); $("pauseTxt").textContent = "Pausar fila"; }
   }
 
   // processa os itens marcados com inRun e estado "queued"
+  var paused = false, pausedAt = 0;
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  async function waitIfPaused() {
+    if (!paused) return;
+    setStatus("Fila pausada. Clique em Continuar quando quiser.");
+    taskbar.state(8);
+    while (paused && !cancelled) await sleep(250);
+    if (!cancelled) { setStatus(""); taskbar.state(2); }
+  }
   async function runQueue(sel) {
-    cancelled = false; setBusy(true); eta.start = Date.now();
+    cancelled = false; paused = false; setBusy(true); eta.start = Date.now();
+    taskbar.start();
     $("restart").classList.remove("show");
     renderQueue(); updateEta();
     var etaTimer = setInterval(updateEta, 1000);
     for (var i = 0; i < queue.length; i++) {
       var it = queue[i];
       if (!it.inRun || it.state !== "queued") continue;
+      await waitIfPaused();
       if (cancelled) { it.state = "cancel"; continue; }
       it.state = "running"; it.progress = 0; it.msg = ""; renderQueue();
       try {
         it.msg = await processItem(it, sel);
         it.state = "ok"; it.progress = 1;
+        if (soundMode === "clip") play("Alert_OK.mp3");
       } catch (e) {
         if (e.message === "__cancel__" || cancelled) { it.state = "cancel"; it.msg = ""; }
-        else { it.state = "fail"; it.msg = e.message; }
+        else { it.state = "fail"; it.msg = e.message; if (soundMode === "clip") play("Alert_FAIL.mp3"); }
       }
       renderQueue();
     }
@@ -418,6 +450,7 @@
     clearInterval(etaTimer);
     var elapsed = (Date.now() - eta.start) / 1000;
     setBusy(false); renderQueue(); $("eta").hidden = true;
+    setPanelTitle("");
 
     var run = queue.filter(function (q) { return q.inRun; });
     var ok = run.filter(function (q) { return q.state === "ok"; }).length;
@@ -428,14 +461,17 @@
     var clipsTxt = function (n) { return n + (n === 1 ? " clipe trackeado" : " clipes trackeados"); };
     if (cancelled) {
       setStatus("Fila cancelada. " + ok + " de " + run.length + (run.length === 1 ? " clipe trackeado." : " clipes trackeados."));
+      taskbar.stop();
     } else if (bad) {
       setStatus(ok + " de " + run.length + (run.length === 1 ? " clipe trackeado" : " clipes trackeados") + " · " + bad + " com problema (veja a fila).", "err", true);
-      play("Alert_FAIL.mp3");
+      if (soundMode === "queue") play("Alert_FAIL.mp3");
+      taskbar.finish(true);
       notifyEnd("Fila terminada com problemas", ok + " de " + run.length + " · " + bad + " com problema. Veja a fila no painel.");
     } else {
       var low = run.filter(function (q) { return q.state === "ok" && q.conf < 0.7; }).length;
       showMission(clipsTxt(ok), fmtTime(elapsed), low ? low + (low === 1 ? " para conferir" : " para conferir") : "");
-      play("Alert_OK.mp3");
+      if (soundMode === "queue") play("Alert_OK.mp3");
+      taskbar.finish(false);
       notifyEnd("Missão cumprida!", clipsTxt(ok) + " em " + fmtTime(elapsed) + ".");
     }
   }
@@ -469,12 +505,94 @@
     await runQueue(lastSel);
   });
 
+  $("pause").addEventListener("click", function () {
+    if (!busy) return;
+    paused = !paused;
+    $("pause").classList.toggle("paused", paused);
+    $("pauseTxt").textContent = paused ? "Continuar" : "Pausar fila";
+    if (paused) { pausedAt = Date.now(); setStatus("Pausando… o clipe atual termina e a fila espera."); }
+    else { eta.start += Date.now() - pausedAt; setStatus(""); }
+    updateTitleAndTaskbar();
+  });
+
   $("cancel").addEventListener("click", function () {
     if (!busy) return;
-    cancelled = true; $("cancel").disabled = true;
+    cancelled = true; paused = false; $("cancel").disabled = true;
     setStatus("Cancelando…");
     killTree(current);
   });
+
+  // ------------------------------------------------------------ barra de progresso no icone (Windows)
+  // Um PowerShell fica aberto durante a fila e atualiza o icone do Premiere na barra de tarefas
+  // (ITaskbarList3), recebendo comandos pelo stdin: "p 42" (porcentagem), "s 2" (estado), "q" (sair).
+  // Estados: 0 = sem barra, 2 = normal (verde), 4 = erro (vermelho), 8 = pausado (amarelo).
+  var taskbar = (function () {
+    var proc = null, last = -1;
+    var script = [
+      "Add-Type -TypeDefinition @'",
+      "using System; using System.Runtime.InteropServices;",
+      "namespace GTAB {",
+      " [ComImport, Guid(\"ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf\"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]",
+      " public interface ITaskbarList3 {",
+      "  void HrInit(); void AddTab(IntPtr h); void DeleteTab(IntPtr h); void ActivateTab(IntPtr h); void SetActiveAlt(IntPtr h);",
+      "  void MarkFullscreenWindow(IntPtr h, [MarshalAs(UnmanagedType.Bool)] bool f);",
+      "  void SetProgressValue(IntPtr h, ulong done, ulong total);",
+      "  void SetProgressState(IntPtr h, int flags);",
+      " }",
+      " [ComImport, Guid(\"56FDF344-FD6D-11d0-958A-006097C9A090\"), ClassInterface(ClassInterfaceType.None)]",
+      " public class TaskbarList {}",
+      " public static class TB {",
+      "  static ITaskbarList3 t;",
+      "  public static void Init() { t = (ITaskbarList3)new TaskbarList(); t.HrInit(); }",
+      "  public static void Value(IntPtr h, int v) { t.SetProgressValue(h, (ulong)v, 100UL); }",
+      "  public static void State(IntPtr h, int s) { t.SetProgressState(h, s); }",
+      " }",
+      "}",
+      "'@",
+      "[GTAB.TB]::Init()",
+      "$pp = Get-Process -Name 'Adobe Premiere Pro' -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1",
+      "if (-not $pp) { exit 1 }",
+      "$h = $pp.MainWindowHandle",
+      "while ($true) {",
+      "  $l = [Console]::In.ReadLine()",
+      "  if ($l -eq $null -or $l -eq 'q') { break }",
+      "  $a = $l.Split(' ')",
+      "  try { if ($a[0] -eq 'p') { [GTAB.TB]::Value($h, [int]$a[1]) } elseif ($a[0] -eq 's') { [GTAB.TB]::State($h, [int]$a[1]) } } catch {}",
+      "}",
+      "try { [GTAB.TB]::State($h, 0) } catch {}"
+    ].join("\n");
+    function send(line) { try { if (proc && proc.stdin.writable) proc.stdin.write(line + "\n"); } catch (e) {} }
+    function start() {
+      if (!IS_WIN) return;
+      stop(); last = -1;
+      try {
+        var enc = req("buffer").Buffer.from(script, "utf16le").toString("base64");
+        proc = cp.spawn("powershell", ["-NoProfile", "-NonInteractive", "-Sta", "-ExecutionPolicy", "Bypass", "-EncodedCommand", enc], { windowsHide: true });
+        proc.on("error", function () { proc = null; });
+        proc.on("close", function () { proc = null; });
+        proc.stderr.on("data", function (b) { addLog("barra do ícone: " + b); });
+        send("s 2"); send("p 0");
+      } catch (e) { proc = null; }
+    }
+    function set(frac) {
+      var v = Math.max(0, Math.min(100, Math.round(frac * 100)));
+      if (v === last) return;
+      last = v; send("p " + v);
+    }
+    function state(s) { send("s " + s); }
+    function finish(err) {
+      if (!proc) return;
+      send("p 100"); send("s " + (err ? 4 : 2));
+      setTimeout(stop, err ? 4000 : 1500);
+    }
+    function stop() {
+      if (!proc) return;
+      send("s 0"); send("q");
+      var p = proc; proc = null;
+      setTimeout(function () { try { p.kill(); } catch (e) {} }, 2000);
+    }
+    return { start: start, set: set, state: state, finish: finish, stop: stop };
+  })();
 
   // ------------------------------------------------------------ limpar motion
   $("clear").addEventListener("click", async function () {
@@ -698,8 +816,8 @@
     try { txt = fs.readFileSync(path.join(EXT, "CHANGELOG.md"), "utf8"); } catch (e) { return []; }
     var out = [], cur = null;
     txt.split(/\r?\n/).forEach(function (line) {
-      var m = /^##\s+v?([\d.]+)/.exec(line);
-      if (m) { cur = { version: m[1], lines: [] }; out.push(cur); return; }
+      var m = /^##\s+v?([\d.]+)(?:\s*[—–·-]\s*(.+))?$/.exec(line);
+      if (m) { cur = { version: m[1], date: (m[2] || "").trim(), lines: [] }; out.push(cur); return; }
       if (cur && line.trim()) cur.lines.push(line);
     });
     return out;
@@ -722,12 +840,13 @@
     var all = parseChangelog();
     var curr = all.filter(function (v) { return v.version === INFO.version; })[0] || all[0];
     $("notesTitle").textContent = "Novidades da v" + (curr ? curr.version : INFO.version);
+    $("notesDate").textContent = curr && curr.date ? curr.date : "";
     if (!curr) { $("notesBody").innerHTML = "<p>Notas não encontradas.</p>"; }
     else {
       var older = all.filter(function (v) { return v !== curr; });
       $("notesBody").innerHTML = versionHTML(curr) + (older.length ?
         '<details class="older"><summary>Versões anteriores</summary>' +
-        older.map(function (v) { return "<h4>v" + esc(v.version) + "</h4>" + versionHTML(v); }).join("") + "</details>" : "");
+        older.map(function (v) { return "<h4>v" + esc(v.version) + (v.date ? ' <span class="date">· ' + esc(v.date) + "</span>" : "") + "</h4>" + versionHTML(v); }).join("") + "</details>" : "");
     }
     $("notesModal").classList.add("show");
   }
