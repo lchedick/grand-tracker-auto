@@ -17,14 +17,14 @@ Feito para transformar pregações gravadas para o YouTube em cortes verticais p
 - **Atualização automática** pelas releases deste repositório, com notas da versão e botão para reiniciar o Premiere.
 - **Tamanho da interface** ajustável (Pequena, Média ou Grande).
 
-## Instalação (Windows)
+## Instalação
 
-1. Instale o [Python](https://www.python.org/downloads/) marcando *Add python.exe to PATH*.
-2. Baixe o zip da [última release](https://github.com/lchedick/grand-tracker-auto/releases/latest) e descompacte.
-3. Feche o Premiere e rode `instalar.bat`.
+1. Baixe o zip da [última release](https://github.com/lchedick/grand-tracker-auto/releases/latest) e descompacte.
+2. Feche o Premiere e rode o instalador:
+   - **Windows:** dois cliques em `instalar_Windows.bat`.
+   - **Mac (beta):** botão direito em `instalar_MacOS.command` → **Abrir** → **Abrir**.
+3. Se o Python não estiver instalado, o instalador oferece instalar sozinho.
 4. No Premiere: **Window → Extensions → GTA • Grand Tracker Auto V1**.
-
-macOS: em breve.
 
 ## Como usar
 
@@ -53,11 +53,11 @@ GrandTrackerAuto/          extensão CEP (o que vai para a pasta de extensões)
 ├── assets/                ícones e sons
 ├── CHANGELOG.md           notas de cada versão (mostradas no painel)
 └── version.json           versão usada pelo atualizador
-instalar.bat               instalador Windows
+instalar_Windows.bat       instalador Windows
+instalar_MacOS.command     instalador Mac (beta)
 LEIA-ME.txt                guia rápido que vai junto no zip
 tools/build_release.py     gera o zip da release
 ```
-
 
 ## Publicar uma versão nova
 

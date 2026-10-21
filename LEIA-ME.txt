@@ -1,70 +1,99 @@
-GTA • GRAND TRACKER AUTO V1
+﻿GTA • GRAND TRACKER AUTO V1
 ===========================
-Painel para Adobe Premiere Pro que reenquadra videos 16:9 em 9:16
-seguindo o pregador (ou qualquer pessoa), com keyframes de Position.
 
-Instalacao (uma vez)
+Painel para Adobe Premiere Pro que reenquadra vídeos 16:9 em 9:16
+seguindo o pregador, com keyframes de Position.
+
+
+INSTALAÇÃO - WINDOWS
 --------------------
-1. Se nao tiver Python: instale em https://www.python.org/downloads/
-   marcando "Add python.exe to PATH".
-2. Feche o Premiere.
-3. De dois cliques em instalar.bat.
-4. Abra o Premiere: Window > Extensions > GTA • Grand Tracker Auto V1.
+1. Feche o Premiere.
+2. Dê dois cliques em instalar_Windows.bat.
+3. Se o Python não estiver instalado, o instalador pergunta se pode
+   instalar. Responda: "S" e aguarde (não precisa de senha de
+   administrador).
+4. Quando aparecer "Pronto!", abra o Premiere e vá em:
+   Window > Extensions > GTA • Grand Tracker Auto V1
 
-Como usar
+
+INSTALAÇÃO - MAC (BETA)
+-----------------------
+1. Feche o Premiere.
+2. Clique com o botão direito em instalar_MacOS.command > Abrir > Abrir.
+   (Na primeira vez o Mac avisa que o arquivo é de um "desenvolvedor não
+   identificado". Isso é normal para programas baixados da internet.)
+3. Se o Python não estiver instalado, o instalador pergunta se pode
+   instalar. Responda: "S". O Mac vai pedir a senha do computador.
+4. Quando aparecer "Pronto!", abra o Premiere e vá em:
+   Window > Extensions > GTA • Grand Tracker Auto V1
+
+A versão para Mac ainda está em teste. Se algo não funcionar, use
+Configurações > Suporte > Copiar diagnóstico e envie para o Lucas.
+
+===========================
+
+COMO USAR
 ---------
-1. Crie uma sequencia vertical (1080x1920) com os trechos do culto.
-   Importante: os clipes NAO podem estar com "Scale to Frame Size" ligado.
+1. Crie uma sequência vertical (1080x1920) com os trechos do culto.
+   Importante: os clipes NÃO podem estar com "Scale to Frame Size" ligado.
 2. Selecione um ou mais clipes na timeline.
-3. Clique em "Trackear selecionados".
-   A fila mostra cada clipe ([1/N]), a barra de progresso e o tempo estimado.
-   Se um clipe falhar, os outros continuam. Ao final toca um som:
-   OK = tudo certo, FAIL = algum clipe teve problema (veja na fila).
+3. Clique em "Trackear".
+   A fila mostra cada clipe ([1/N]), a barra de progresso e o tempo
+   estimado. Se um clipe falhar, os outros continuam.
 4. Os keyframes aparecem em Effect Controls > Motion > Position.
 
-Botoes e ajustes
-----------------
-(Zona morta, Suavidade, Posicao do rosto e Ajustar escala ficam em "Mais opcoes".)
-Trackear:       trackeia os clipes selecionados na timeline.
-Limpar Motion:  zera o Motion dos clipes selecionados (keyframes, posicao,
-                escala, rotacao, crop...), deixando o clipe limpo.
-Posicao do rosto: deixa o rosto no centro ou deslocado para um lado
-                (duplo clique no controle volta ao centro).
-Estilo:         "Rosto no centro" segue o rosto o tempo todo (padrao).
-                "Camera parada" so anda quando ele muda de lugar.
-Zona morta:     quanto ele pode se mexer antes da camera andar.
-Suavidade:      maior = movimentos de camera mais lentos.
-Cancelar fila:  para a fila na hora.
-Fila:           clique num clipe para encontra-lo na timeline. Se algum
-                falhar, use "Tentar de novo os que falharam".
 
-Configuracoes (engrenagem no topo)
-----------------------------------
-Qualidade:      Rapida (5 quadros/s), Normal (10) ou Precisa (15, imagem maior).
-Usar proxy:     se o clipe tiver proxy, analisa o proxy (mais rapido).
-Sons:           liga/desliga, volume e botoes para testar os sons.
-Notificacao:    aviso do Windows quando a fila termina (com botao de teste).
-Atualizacoes ao abrir: liga e desliga.
-Interface:      tamanho Pequena, Media ou Grande.
-Testar Python:  confere se o Python e as bibliotecas estao instalados.
-Copiar diagnostico: copia informacoes para pedir ajuda.
+TELA PRINCIPAL
+--------------
+Trackear:          trackeia os clipes selecionados na timeline.
+Limpar Motion:     zera o Motion dos clipes selecionados (keyframes,
+                   posição, escala, rotação, crop...).
+Estilo:            "Rosto no centro" segue o rosto o tempo todo.
+                   "Câmera parada" só anda quando ele muda de lugar.
+Fila:              clique num clipe para encontrá-lo na timeline.
+                   Se algum falhar, use "Tentar de novo os que falharam".
+Cancelar fila:     para a fila na hora.
+
+Em "Mais opções":
+Zona morta:        quanto ele pode se mexer antes da câmera andar.
+Suavidade:         maior = movimentos de câmera mais lentos.
+Posição do rosto:  deixa o rosto no centro ou deslocado para um lado
+                   (duplo clique no controle volta ao centro).
+Ajustar escala:    aumenta o vídeo para preencher o 9:16.
+
 Rodar de novo apaga os keyframes de Position anteriores do clipe.
 
-Atualizacoes
+
+CONFIGURAÇÕES (engrenagem no topo)
+----------------------------------
+Qualidade:         Rápida, Normal ou Precisa.
+Usar proxy:        se o clipe tiver proxy, analisa o proxy (mais rápido).
+Sons:              liga/desliga, volume e botões para testar.
+Notificação:       aviso do sistema quando a fila termina.
+Atualizações:      verificar ao abrir (liga/desliga).
+Interface:         tamanho Pequena, Média ou Grande.
+Python:            comando usado e botão "Testar Python".
+Suporte:           Copiar diagnóstico, Restaurar padrões e Ver log.
+
+
+ATUALIZAÇÕES
 ------------
-O painel avisa quando existe uma versao nova (bolinha verde no icone de
-atualizacao, no topo). Clique em "Atualizar" e,
-quando terminar, clique em "Reiniciar o Premiere agora"
-(ou feche e abra o Premiere).
-Para verificar na hora, clique no icone de atualizacao no topo.
-Depois de atualizar, o painel mostra as novidades da versao. Para ver de
-novo: Configuracoes > Sobre > Ver notas da versao.
+Quando existir uma versão nova, aparece uma bolinha verde no ícone de
+atualização (no topo). Clique em "Atualizar" e depois em
+"Reiniciar o Premiere agora". As novidades aparecem quando o painel abre.
+Para ver de novo: Configurações > Sobre > Ver notas da versão.
 
-Problemas
+
+PROBLEMAS
 ---------
-"Python nao encontrado": em Configuracoes, use "Testar Python" e, se
-precisar, troque "py -3" por "python".
-O painel nao aparece no menu: rode o instalar.bat de novo e reinicie o Premiere.
+"Python não encontrado":
+    Configurações > Python > Testar Python. Se não funcionar, rode o
+    instalador de novo e responda: "S" quando ele perguntar.
+O painel não aparece no menu:
+    rode o instalador de novo e reinicie o Premiere.
+Alguma outra coisa:
+    Configurações > Suporte > Copiar diagnóstico e envie para o Lucas.
 
-Grand Tracker Auto | Desenvolvido por Lucas Chedick | Licenca MIT
+
+Grand Tracker Auto | Desenvolvido por Lucas Chedick | Licença MIT
 https://github.com/lchedick/grand-tracker-auto

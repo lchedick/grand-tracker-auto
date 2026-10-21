@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.7
+
+- **Instalação do Python automática (Windows)**: se o Python não estiver instalado, o instalador pergunta e instala sozinho, sem pedir senha de administrador.
+- **Mac (beta)**: novo instalador `instalar_MacOS.command`, que também oferece instalar o Python. "Reiniciar o Premiere agora" e notificações funcionam no Mac.
+- Instaladores renomeados: `instalar_Windows.bat` e `instalar_MacOS.command`.
+- O painel passa a usar automaticamente o Python encontrado pelo instalador.
+- LEIA-ME reorganizado, com instruções para Windows e Mac.
+
 ## v1.0.6
 
 - **Correção do "Reiniciar o Premiere agora"**: o Premiere fechava mas não abria de novo. Agora quem reabre o Premiere é um processo do próprio Windows, que não é encerrado junto com ele.

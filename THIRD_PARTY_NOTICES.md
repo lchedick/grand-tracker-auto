@@ -14,7 +14,7 @@ O Grand Tracker Auto inclui os seguintes modelos de terceiros em `GrandTrackerAu
 - Licença: MIT License
 - Texto completo da licença: https://github.com/ShiqiYu/libfacedetection.train/blob/master/LICENSE
 
-Bibliotecas usadas em tempo de execução (instaladas pelo `instalar.bat`):
+Bibliotecas usadas em tempo de execução (instaladas pelos instaladores `instalar_Windows.bat` e `instalar_MacOS.command`):
 
 - OpenCV (`opencv-python`): Apache License 2.0
 - NumPy: BSD 3-Clause License

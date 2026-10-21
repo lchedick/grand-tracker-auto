@@ -5,6 +5,7 @@
   var req = window.require || (window.cep_node && window.cep_node.require);
   var cp = req("child_process"), fs = req("fs"), os = req("os"), path = req("path"), https = req("https");
   var IS_WIN = os.platform() === "win32";
+  var IS_MAC = os.platform() === "darwin";
   var proc = (typeof process !== "undefined" && process.env) ? process : req("process");
 
   var $ = function (id) { return document.getElementById(id); };
@@ -139,7 +140,7 @@
     $("sv").value = load("sv", DEF.sv);
     $("pos").value = load("pos", DEF.pos);
     $("fill").checked = load("fill", DEF.fill) === "1";
-    $("py").value = load("py", IS_WIN ? "py -3" : "python3");
+    $("py").value = load("py", defaultPy());
     $("optProxy").checked = load("proxy", DEF.proxy) === "1";
     $("optSounds").checked = load("sounds", DEF.sounds) === "1";
     $("optAutoUpd").checked = load("autoupd", DEF.autoupd) === "1";
@@ -189,7 +190,7 @@
       if (/ENOENT|não é reconhecido|not recognized/i.test(e.message + (e.code || "")))
         r.textContent = "✗ Python não encontrado com \"" + $("py").value + "\". Tente \"python\" ou instale o Python.";
       else if (/No module named/i.test(e.message))
-        r.textContent = "✗ O Python funciona, mas faltam bibliotecas. Rode o instalar.bat de novo.";
+        r.textContent = "✗ O Python funciona, mas faltam bibliotecas. Rode o instalador de novo.";
       else r.textContent = "✗ " + e.message;
     }
     $("testPy").disabled = false;
@@ -293,8 +294,22 @@
     $("etaText").textContent = "≈ " + fmtTime((total - processed) / (processed / elapsed)) + " restantes";
   }
 
+  // o instalador grava em python_path.txt o Python que ele encontrou ou instalou
+  function defaultPy() {
+    try {
+      var t = fs.readFileSync(path.join(EXT, "python_path.txt"), "utf8").trim();
+      if (t) return t;
+    } catch (e) {}
+    return IS_WIN ? "py -3" : "python3";
+  }
+  // separa o comando respeitando aspas: "C:\Users\Lucas Chedick\python.exe" -3
+  function splitCmd(str) {
+    var out = [], re = /"([^"]*)"|(\S+)/g, m;
+    while ((m = re.exec(str))) out.push(m[1] !== undefined ? m[1] : m[2]);
+    return out;
+  }
   function pyCmd() {
-    var parts = $("py").value.trim().split(/\s+/).filter(Boolean);
+    var parts = splitCmd($("py").value.trim());
     return { cmd: parts[0] || (IS_WIN ? "py" : "python3"), args: parts.slice(1) };
   }
   function killTree(p) {
@@ -340,7 +355,7 @@
         if (cancelled) return reject(new Error("__cancel__"));
         if (code === 0) return resolve(useProxy);
         var m = /ERRO: (.*)/.exec(errBuf);
-        var hint = /No module named/.test(errBuf) ? " Rode o instalar.bat de novo." : "";
+        var hint = /No module named/.test(errBuf) ? " Rode o instalador de novo." : "";
         reject(new Error((m ? m[1].trim() : "O rastreamento falhou (código " + code + ").") + hint));
       });
     });
@@ -563,7 +578,7 @@
       $("updateBar").classList.remove("show"); $("hdrUpdate").classList.remove("has-update");
       setStatus("Atualizado para v" + latest.version + "! Reinicie o Premiere para concluir.", "ok", true);
       latest = null;
-      if (IS_WIN) $("restart").classList.add("show");
+      if (IS_WIN || IS_MAC) $("restart").classList.add("show");
       play("Alert_OK.mp3");
     } catch (e) {
       setStatus("Falha na atualização: " + e.message, "err", true);
@@ -621,6 +636,29 @@
     fs.writeFileSync(f, "\ufeff" + watcherScript(proj), "utf8");
     return f;
   }
+  // Mac: um bash destacado (setsid) espera o Premiere fechar e abre de novo com "open"
+  function startWatcherMac(proj) {
+    var log = path.join(os.tmpdir(), "GrandTrackerAuto_restart.log");
+    var sh = [
+      'LOG=' + shq(log),
+      'L() { echo "$(date +%Y-%m-%dT%H:%M:%S) $1" >> "$LOG"; }',
+      'L "vigia iniciado"',
+      'PID=$(pgrep -f "/Adobe Premiere Pro[^/]*\\.app/Contents/MacOS/" | head -n 1)',
+      '[ -z "$PID" ] && { L "Premiere nao encontrado"; exit 1; }',
+      'EXE=$(ps -p "$PID" -o comm= )',
+      'APP=$(echo "$EXE" | sed -E "s#(\\.app)/Contents/.*#\\1#")',
+      'L "app: $APP"',
+      'for i in $(seq 1 360); do kill -0 "$PID" 2>/dev/null || break; sleep 0.5; done',
+      'kill -0 "$PID" 2>/dev/null && { L "Premiere nao fechou (salvar cancelado?)"; exit 2; }',
+      'sleep 3',
+      'PROJ=' + shq(proj || ""),
+      'if [ -n "$PROJ" ] && [ -e "$PROJ" ]; then open -a "$APP" "$PROJ"; L "reaberto com $PROJ"; else open -a "$APP"; L "reaberto"; fi'
+    ].join("\n");
+    var child = cp.spawn("/bin/bash", ["-c", sh], { detached: true, stdio: "ignore" });
+    child.unref();
+    return "bash";
+  }
+  function shq(t) { return "'" + String(t).replace(/'/g, "'\\''") + "'"; }
   async function restartPremiere() {
     var b = $("restart");
     b.disabled = true;
@@ -629,7 +667,7 @@
       try { proj = await evalES("app.project && app.project.path ? app.project.path : ''"); } catch (e) {}
       if (/^EvalScript error/i.test(proj)) proj = "";
       setStatus("Reiniciando o Premiere…", "ok", true);
-      var how = await startWatcher(proj);
+      var how = IS_MAC ? startWatcherMac(proj) : await startWatcher(proj);
       addLog("vigia iniciado via " + how + "\n");
       setTimeout(function () { evalES("app.quit()"); }, 1200);
       setTimeout(function () { b.disabled = false; }, 15000);   // se cancelou o salvar, libera o botao
@@ -708,7 +746,14 @@
     aumidReady = true;
   }
   async function notify(title, body, force) {
-    if (!IS_WIN || (!force && !$("optNotify").checked)) return;
+    if ((!IS_WIN && !IS_MAC) || (!force && !$("optNotify").checked)) return;
+    if (IS_MAC) {
+      try {
+        await exec("osascript", ["-e", "display notification " + JSON.stringify(String(body)) + " with title " +
+          JSON.stringify("Grand Tracker Auto") + " subtitle " + JSON.stringify(String(title))]);
+      } catch (e) { addLog("notificação: " + e.message + "\n"); }
+      return;
+    }
     try {
       await ensureAumid();
       var xml = '<toast><visual><binding template="ToastGeneric"><text>' + xmlEsc(title) + "</text><text>" + xmlEsc(body) +
@@ -737,8 +782,11 @@
       else { el.className = "notif-status ok"; el.textContent = "✓ Notificações do Windows ativadas. (Se o \"Não perturbe\" estiver ligado, o Windows pode segurar o aviso.)"; }
     } catch (e) { el.className = "notif-status"; el.textContent = ""; }
   }
-  if (!IS_WIN) $("notifBox").hidden = true;
-  $("openConfig").addEventListener("click", function () { if (IS_WIN) checkNotifyStatus(); });
+  if (!IS_WIN && !IS_MAC) $("notifBox").hidden = true;
+  $("openConfig").addEventListener("click", function () {
+    if (IS_WIN) checkNotifyStatus();
+    else if (IS_MAC) { $("notifStatus").className = "notif-status"; $("notifStatus").textContent = "No Mac, a primeira notificação pode pedir permissão. Se não aparecer, veja Ajustes do Sistema → Notificações → Editor de Scripts."; }
+  });
   $("testNotify").addEventListener("click", async function () {
     $("testNotify").disabled = true;
     await notify("Missão cumprida!", "Teste do Grand Tracker Auto: as notificações estão funcionando.", true);
