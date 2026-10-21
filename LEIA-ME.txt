@@ -24,6 +24,7 @@ Como usar
 
 Botoes e ajustes
 ----------------
+(Zona morta, Suavidade, Posicao do rosto e Ajustar escala ficam em "Mais opcoes".)
 Trackear:       trackeia os clipes selecionados na timeline.
 Limpar Motion:  zera o Motion dos clipes selecionados (keyframes, posicao,
                 escala, rotacao, crop...), deixando o clipe limpo.
@@ -44,6 +45,7 @@ Usar proxy:     se o clipe tiver proxy, analisa o proxy (mais rapido).
 Sons:           liga/desliga, volume e botoes para testar os sons.
 Notificacao:    aviso do Windows quando a fila termina (com botao de teste).
 Atualizacoes ao abrir: liga e desliga.
+Interface:      tamanho Pequena, Media ou Grande.
 Testar Python:  confere se o Python e as bibliotecas estao instalados.
 Copiar diagnostico: copia informacoes para pedir ajuda.
 Rodar de novo apaga os keyframes de Position anteriores do clipe.

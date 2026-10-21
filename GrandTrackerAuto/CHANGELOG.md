@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.6
+
+- **Correção do "Reiniciar o Premiere agora"**: o Premiere fechava mas não abria de novo. Agora quem reabre o Premiere é um processo do próprio Windows, que não é encerrado junto com ele.
+- O diagnóstico (Configurações → Copiar diagnóstico) agora inclui o registro do último reinício.
+- **Mais opções**: zona morta, suavidade, posição do rosto e "Ajustar escala" agora ficam num menu recolhível. A tela inicial mostra só os botões e o Estilo.
+- **Novos padrões**: zona morta 0%, suavidade 0.5 e rosto no centro (use Configurações → Restaurar padrões para aplicar).
+- **Tamanho da interface** nas Configurações: Pequena, Média ou Grande.
+- Seções **Python**, **Suporte** e **Log** das Configurações agora são recolhíveis.
+- **Sons mais altos** e volume padrão em 100%.
+- Trackear e Limpar Motion ficam **um embaixo do outro** quando o painel está estreito.
+
 ## v1.0.5
 
 - **Missão cumprida!**: quando a fila termina sem erro, a mensagem de conclusão ganha animação de entrada e um brilho.

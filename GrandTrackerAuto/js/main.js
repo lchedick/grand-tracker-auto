@@ -90,8 +90,8 @@
   // ------------------------------------------------------------ preferencias
   function load(k, d) { try { var v = localStorage.getItem("gta_" + k); return v === null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem("gta_" + k, v); } catch (e) {} }
-  var DEF = { modo: "rosto", dz_rosto: "4", dz_operador: "15", sv: "10", pos: "0", fill: "1",
-              qual: "normal", proxy: "1", sounds: "1", autoupd: "1", vol: "80", notify: "1" };
+  var DEF = { modo: "rosto", dz_rosto: "0", dz_operador: "0", sv: "5", pos: "0", fill: "1",
+              qual: "normal", proxy: "1", sounds: "1", autoupd: "1", vol: "100", notify: "1", ui: "1" };
   var QUAL_HINT = {
     rapida: "Analisa 5 quadros por segundo. Cerca de 1,4× mais rápida. Boa para pregador mais parado.",
     normal: "Analisa 10 quadros por segundo. O equilíbrio para o dia a dia.",
@@ -101,6 +101,18 @@
 
   function setSeg(id, v) { each($(id).querySelectorAll("button"), function (b) { b.classList.toggle("on", b.dataset.v === v); }); }
   function setModo(m) { modo = m; save("modo", m); setSeg("modo", m); $("dz").value = load("dz_" + m, DEF["dz_" + m]); refresh(); }
+  function setUiScale(v) {
+    save("ui", v); setSeg("uiScale", v);
+    document.documentElement.style.zoom = v;
+    fitActions();
+  }
+  // botoes Trackear / Limpar um embaixo do outro quando o painel estiver estreito
+  function fitActions() {
+    var a = document.querySelector(".actions");
+    var z = Number(load("ui", "1")) || 1;
+    if (a) a.classList.toggle("stack", window.innerWidth / z - 24 < 270);
+  }
+  window.addEventListener("resize", fitActions);
   function setQual(q) { qual = q; save("qual", q); setSeg("qual", q); $("qualHint").textContent = QUAL_HINT[q]; }
 
   function paintRange(el) { el.style.setProperty("--p", ((el.value - el.min) / (el.max - el.min) * 100) + "%"); }
@@ -134,10 +146,17 @@
     $("vol").value = load("vol", DEF.vol);
     $("optNotify").checked = load("notify", DEF.notify) === "1";
     setQual(load("qual", DEF.qual));
+    setUiScale(load("ui", DEF.ui));
     setModo(load("modo", DEF.modo));
   }
   $("modo").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b && !busy) setModo(b.dataset.v); });
   $("qual").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setQual(b.dataset.v); });
+  $("uiScale").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setUiScale(b.dataset.v); });
+  // lembra quais secoes recolhiveis estavam abertas
+  ["moreOpts", "foldPy", "foldSup"].forEach(function (id) {
+    $(id).open = load("open_" + id, "0") === "1";
+    $(id).addEventListener("toggle", function () { save("open_" + id, $(id).open ? "1" : "0"); });
+  });
   ["dz", "sv", "pos", "fill", "py", "optProxy", "optSounds", "optAutoUpd", "vol", "optNotify"].forEach(function (id) {
     $(id).addEventListener("input", refresh); $(id).addEventListener("change", refresh);
   });
@@ -177,7 +196,7 @@
   });
 
   $("resetDefaults").addEventListener("click", function () {
-    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd", "vol", "notify"].forEach(function (k) { save(k, DEF[k]); });
+    ["modo", "dz_rosto", "dz_operador", "sv", "pos", "fill", "qual", "proxy", "sounds", "autoupd", "vol", "notify", "ui"].forEach(function (k) { save(k, DEF[k]); });
     applyPrefs();
     $("supportResult").className = "result ok";
     $("supportResult").textContent = "✓ Padrões restaurados (o comando do Python foi mantido).";
@@ -194,6 +213,10 @@
       "Ajustes: estilo=" + modo + " zona=" + $("dz").value + "% suav=" + (Number($("sv").value) / 10) +
         " posição=" + $("pos").value + "% qualidade=" + qual + " preencher=" + $("fill").checked + " proxy=" + $("optProxy").checked,
       "", "Última fila:", lastQueueSummary || "(nenhuma)",
+      "", "Reinício (últimas linhas):", (function () {
+        try { return fs.readFileSync(path.join(os.tmpdir(), "GrandTrackerAuto_restart.log"), "utf8").trim().split(/\r?\n/).slice(-8).join("\n"); }
+        catch (e) { return "(sem registro)"; }
+      })(),
       "", "Log:", $("log").textContent.slice(-6000) || "(vazio)"
     ].join("\n");
     var ok = copyText(text);
@@ -551,8 +574,53 @@
   $("updateBtn").addEventListener("click", doUpdate);
 
   // ------------------------------------------------------------ reiniciar o premiere
-  // Um PowerShell separado espera o Premiere fechar e abre de novo com o mesmo projeto.
-  // Se a pessoa cancelar o "salvar?", o Premiere nao fecha e nada acontece.
+  // O Premiere encerra junto com ele todos os processos que o painel abriu. Por isso o
+  // "vigia" que espera o Premiere fechar e abre de novo e criado pelo WMI do Windows
+  // (fica fora do grupo de processos do Premiere e sobrevive ao fechamento).
+  // Se a pessoa cancelar o "salvar?", o Premiere nao fecha e o vigia desiste em 3 min.
+  // Registro do que aconteceu: %TEMP%\GrandTrackerAuto_restart.log
+  function watcherScript(proj) {
+    return [
+      "$log = Join-Path $env:TEMP 'GrandTrackerAuto_restart.log'",
+      "function L($m) { Add-Content -Path $log -Value ((Get-Date -Format s) + ' ' + $m) }",
+      "L 'vigia iniciado'",
+      "$p = Get-Process -Name 'Adobe Premiere Pro' -ErrorAction SilentlyContinue | Select-Object -First 1",
+      "if (-not $p) { L 'Premiere nao encontrado'; exit 1 }",
+      "$id = $p.Id",
+      "$exe = $p.Path",
+      "if (-not $exe) { $exe = (Get-CimInstance Win32_Process -Filter (\"ProcessId=$id\")).ExecutablePath }",
+      "L ('exe: ' + $exe)",
+      "$limite = (Get-Date).AddMinutes(3)",
+      "while ((Get-Process -Id $id -ErrorAction SilentlyContinue) -and ((Get-Date) -lt $limite)) { Start-Sleep -Milliseconds 500 }",
+      "if (Get-Process -Id $id -ErrorAction SilentlyContinue) { L 'Premiere nao fechou (salvar cancelado?)'; exit 2 }",
+      "Start-Sleep -Seconds 3",
+      "$proj = " + psStr(proj || ""),
+      "if ($proj -and (Test-Path -LiteralPath $proj)) { Start-Process -FilePath $exe -ArgumentList ('\"' + $proj + '\"'); L ('reaberto com ' + $proj) } else { Start-Process -FilePath $exe; L 'reaberto' }"
+    ].join("\n");
+  }
+  async function startWatcher(proj) {
+    var enc = req("buffer").Buffer.from(watcherScript(proj), "utf16le").toString("base64");
+    var cmdline = "powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand " + enc;
+    try {
+      var out = await psRun([
+        "$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = " + psStr(cmdline) + " }",
+        "Write-Output $r.ReturnValue"
+      ].join("; "));
+      if (out.trim() === "0") return "wmi";
+      addLog("WMI retornou " + out.trim() + "\n");
+    } catch (e) { addLog("WMI: " + e.message + "\n"); }
+    // plano B: tarefa agendada de uma vez so (tambem roda fora do Premiere)
+    var task = "GrandTrackerAuto_Reiniciar";
+    await exec("schtasks", ["/Create", "/F", "/SC", "ONCE", "/ST", "23:59", "/TN", task, "/TR", cmdline.length < 260 ? cmdline : "powershell.exe -NoProfile -WindowStyle Hidden -File \"" + writeWatcherFile(proj) + "\""]);
+    await exec("schtasks", ["/Run", "/TN", task]);
+    setTimeout(function () { exec("schtasks", ["/Delete", "/F", "/TN", task]).catch(function () {}); }, 4000);
+    return "schtasks";
+  }
+  function writeWatcherFile(proj) {
+    var f = path.join(os.tmpdir(), "GrandTrackerAuto_vigia.ps1");
+    fs.writeFileSync(f, "\ufeff" + watcherScript(proj), "utf8");
+    return f;
+  }
   async function restartPremiere() {
     var b = $("restart");
     b.disabled = true;
@@ -560,24 +628,13 @@
       var proj = "";
       try { proj = await evalES("app.project && app.project.path ? app.project.path : ''"); } catch (e) {}
       if (/^EvalScript error/i.test(proj)) proj = "";
-      var ps = [
-        "$p = Get-Process -Name 'Adobe Premiere Pro' -ErrorAction SilentlyContinue | Select-Object -First 1",
-        "if (-not $p) { exit 1 }",
-        "$exe = $p.Path",
-        "$p.WaitForExit(900000) | Out-Null",
-        "if (-not $p.HasExited) { exit 2 }",
-        "Start-Sleep -Seconds 3",
-        "$proj = '" + String(proj).replace(/'/g, "''") + "'",
-        "if ($proj -and (Test-Path -LiteralPath $proj)) { Start-Process -FilePath $exe -ArgumentList ('\"' + $proj + '\"') } else { Start-Process -FilePath $exe }"
-      ].join("; ");
-      var encoded = req("buffer").Buffer.from(ps, "utf16le").toString("base64");   // evita problemas com aspas e acentos
-      var child = cp.spawn("powershell", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
-        { detached: true, stdio: "ignore", windowsHide: true });
-      child.unref();
       setStatus("Reiniciando o Premiere…", "ok", true);
-      setTimeout(function () { evalES("app.quit()"); }, 800);
+      var how = await startWatcher(proj);
+      addLog("vigia iniciado via " + how + "\n");
+      setTimeout(function () { evalES("app.quit()"); }, 1200);
       setTimeout(function () { b.disabled = false; }, 15000);   // se cancelou o salvar, libera o botao
     } catch (e) {
+      addLog("reiniciar: " + e.message + "\n");
       setStatus("Não consegui reiniciar automaticamente. Feche e abra o Premiere manualmente.", "err", true);
       b.disabled = false;
     }
