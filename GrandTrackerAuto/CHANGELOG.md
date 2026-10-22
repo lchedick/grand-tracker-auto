@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.1 — outubro de 2026
+
+- A animação dos botões principais ficou mais sutil: agora eles crescem só um pouco ao passar o mouse, sem passar da interface.
+
 ## v1.1.0 — outubro de 2026
 
 - **Visual novo**: todos os ícones foram redesenhados e agora são vetoriais (SVG), nítidos em qualquer tamanho de interface.
