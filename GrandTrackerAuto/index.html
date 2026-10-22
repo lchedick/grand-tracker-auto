@@ -11,11 +11,18 @@
   }
   * { box-sizing:border-box; }
   html, body { margin:0; background:var(--bg); color:var(--text); font:12px/1.45 "Segoe UI", system-ui, sans-serif; }
+  html, body { overflow-x:hidden; }
   body { padding:10px 12px 0; display:flex; flex-direction:column; min-height:100vh; }
   main { flex:1; }
   [hidden] { display:none !important; }
 
-  .ico { display:inline-block; width:48px; height:48px; flex:none; object-fit:contain; }
+  /* icones em SVG (js/icons.js): a cor vem do CSS (currentColor) */
+  .ico { display:inline-block; width:48px; height:48px; flex:none; color:#bababa; }
+  .ico svg, .logo svg { display:block; width:100%; height:100%; }
+  .btn:not(.secondary) .ico, .update .ico, .styles .stylebtn.on .ico { color:#fff; }
+  .c-accent { color:var(--accent-h) !important; } .c-ok { color:var(--ok) !important; }
+  .c-err { color:var(--err) !important; } .c-warn { color:var(--warn) !important; }
+  .logo { display:block; flex:none; height:44px; width:95px; color:var(--accent-h); margin-right:4px; }
   .ico.lg { width:54px; height:54px; }
   .ico.sm { width:28px; height:28px; }
 
@@ -52,15 +59,14 @@
   .btn:disabled .ico { opacity:.45; }
   .btn.full { width:100%; }
   .btn.small { font-size:11.5px; padding:4px 10px; }
-  .actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .actions.stack { grid-template-columns:1fr; }
   .actions.stack .btn { flex-direction:row; gap:10px; }
   .styles .stylebtn { color:var(--muted); font-weight:500; }
   .styles .stylebtn.on { background:#22364a; color:#fff; font-weight:600; box-shadow:inset 0 0 0 2px var(--accent); }
-  .styles .on-v, .styles .stylebtn.on .off-v { display:none; }
-  .styles .stylebtn.on .on-v { display:inline-block; }
   .qrow { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   #pause.paused { background:#3a2f17; color:var(--warn); }
+  #pause.paused .ico { color:var(--warn); }
   .notes .date { color:var(--muted); font-weight:400; font-size:11.5px; }
   .notes-sub { color:var(--muted); font-size:11.5px; margin:-2px 0 8px; }
 
@@ -82,7 +88,10 @@
   .sec.fold > summary h3 { margin:0; display:flex; align-items:center; }
   .sec.fold > summary:hover h3 { color:var(--text); }
   .sec.fold[open] > summary { margin-bottom:8px; }
-  .actions .btn { flex-direction:column; gap:2px; padding:8px 6px; font-size:12.5px; }
+  .actions .btn { flex-direction:column; gap:2px; padding:8px 6px; font-size:12.5px; border-radius:10px; position:relative;
+                  transition:transform .2s ease, background-color .15s ease, box-shadow .15s ease; }
+  .actions .btn:hover:not(:disabled) { transform:scale(1.1); z-index:2; }
+  .actions .btn:active:not(:disabled) { transform:scale(1.05); }
 
   #status { min-height:16px; margin-top:8px; font-size:11.5px; }
   #status.err { color:var(--err); } #status.ok { color:var(--ok); }
@@ -130,8 +139,7 @@
   input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:16px; background:transparent; margin:0; }
   input[type=range]::-webkit-slider-runnable-track { height:3px; border-radius:2px;
     background:linear-gradient(var(--accent),var(--accent)) 0/var(--p,50%) 100% no-repeat, #4a4a4a; }
-  input[type=range].center::-webkit-slider-runnable-track {
-    background:linear-gradient(var(--accent),var(--accent)) var(--from,50%) 0/var(--w,0%) 100% no-repeat, #4a4a4a; }
+  input[type=range].center::-webkit-slider-runnable-track { background:var(--track, #4a4a4a); }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
     background:#e6e6e6; margin-top:-4.5px; border:0; box-shadow:0 0 0 1px #00000055; }
   input[type=range]:hover::-webkit-slider-thumb { background:#fff; }
@@ -217,26 +225,26 @@
 <body>
 <main>
   <header>
-    <img class="ico lg" src="assets/icons/Track_accent.png" alt="">
+    <i class="logo" data-i="Logo"></i>
     <h1 title="GTA • Grand Tracker Auto V1"><span class="t1">GTA</span><span class="t2">Grand Tracker Auto V1</span></h1>
-    <button class="iconbtn" id="hdrUpdate" title="Verificar atualizações"><img class="ico" src="assets/icons/Update.png" alt=""><span class="dot"></span></button>
-    <button class="iconbtn" id="openConfig" title="Configurações"><img class="ico" src="assets/icons/Config.png" alt=""></button>
+    <button class="iconbtn" id="hdrUpdate" title="Verificar atualizações"><i class="ico" data-i="Update"></i><span class="dot"></span></button>
+    <button class="iconbtn" id="openConfig" title="Configurações"><i class="ico" data-i="Config"></i></button>
   </header>
 
   <div class="update" id="updateBar">
-    <img class="ico sm" src="assets/icons/Update_on.png" alt="">
+    <i class="ico sm" data-i="Update"></i>
     <span id="updateText">Nova versão disponível</span>
     <button id="updateBtn">Atualizar</button>
   </div>
 
   <div class="actions">
     <button class="btn" id="run" title="Trackear os clipes selecionados na timeline">
-      <img class="ico" src="assets/icons/Track_on.png" alt="">Trackear</button>
+      <i class="ico" data-i="Track"></i>Trackear</button>
     <button class="btn secondary" id="clear" title="Zera o Motion dos clipes selecionados (keyframes, posição, escala…)">
-      <img class="ico" src="assets/icons/ClearMotion.png" alt="">Limpar Motion</button>
+      <i class="ico" data-i="ClearMotion"></i>Limpar Motion</button>
   </div>
   <div id="status"></div>
-  <button class="btn green full" id="restart"><img class="ico sm" src="assets/icons/Update_on.png" alt="">Reiniciar o Premiere agora</button>
+  <button class="btn green full" id="restart"><i class="ico sm" data-i="Update"></i>Reiniciar o Premiere agora</button>
   <div class="restart-hint">O Premiere vai fechar (pedindo para salvar, se precisar) e abrir de novo com o mesmo projeto.</div>
 
   <div class="card">
@@ -244,29 +252,29 @@
       <div class="lbl">Estilo</div>
       <div class="actions styles" id="modo">
         <button class="btn secondary stylebtn" data-v="rosto" title="Acompanha o rosto o tempo todo">
-          <img class="ico off-v" src="assets/icons/StyleFace.png" alt=""><img class="ico on-v" src="assets/icons/StyleFace_on.png" alt="">Trackear rosto</button>
+          <i class="ico" data-i="StyleFace"></i>Trackear rosto</button>
         <button class="btn secondary stylebtn" data-v="operador" title="Ignora o balanço e só anda quando o assunto muda de lugar">
-          <img class="ico off-v" src="assets/icons/StyleStatic.png" alt=""><img class="ico on-v" src="assets/icons/StyleStatic_on.png" alt="">Trackear corpo</button>
+          <i class="ico" data-i="StyleStatic"></i>Trackear corpo</button>
       </div>
     </div>
 
     <details class="more" id="moreOpts">
     <summary><span class="chev">▸</span>Mais opções<span class="sum" id="moreSum"></span></summary>
     <div class="field">
-      <div class="lbl"><img class="ico" src="assets/icons/DeadZone.png" alt="">Zona morta</div>
+      <div class="lbl"><i class="ico" data-i="DeadZone"></i>Zona morta</div>
       <div class="row"><input id="dz" type="range" min="0" max="35"><span class="val" id="dzv"></span></div>
       <div class="hint">Quanto o assunto pode se mexer antes da câmera andar.</div>
     </div>
 
     <div class="field">
-      <div class="lbl"><img class="ico" src="assets/icons/Smooth.png" alt="">Suavidade</div>
+      <div class="lbl"><i class="ico" data-i="Smooth"></i>Suavidade</div>
       <div class="row"><input id="sv" type="range" min="5" max="20"><span class="val" id="svv"></span></div>
       <div class="hint">Maior = movimentos de câmera mais lentos.</div>
     </div>
 
     <div class="field">
-      <div class="lbl"><img class="ico" src="assets/icons/HorizontalTrack.png" alt="">Posição do rosto</div>
-      <div class="row"><input id="pos" type="range" min="-30" max="30" step="1"><span class="val" id="posv"></span></div>
+      <div class="lbl"><i class="ico" data-i="HorizontalTrack"></i>Posição do rosto</div>
+      <div class="row"><input id="pos" class="center" type="range" min="-30" max="30" step="1"><span class="val" id="posv"></span></div>
       <div class="hint">Desloca o rosto para um lado. Útil quando vai ter texto ou gráfico do outro. Duplo clique volta ao centro.</div>
     </div>
 
@@ -276,28 +284,28 @@
 
   <div class="card">
     <div class="qhead">
-      <img class="ico" src="assets/icons/Queue.png" alt="">Fila
+      <i class="ico" data-i="Queue"></i>Fila
       <span class="count" id="qcount"></span>
-      <span class="eta" id="eta" hidden><img class="ico" src="assets/icons/Time.png" alt=""><span id="etaText"></span></span>
+      <span class="eta" id="eta" hidden><i class="ico" data-i="Time"></i><span id="etaText"></span></span>
     </div>
     <div class="bar overall"><div id="overall"></div></div>
     <ul id="queueList"></ul>
     <div class="empty" id="qempty">Selecione os clipes na timeline 9:16 e clique em Trackear. Depois, clique num clipe da fila para encontrá-lo na timeline.</div>
     <div class="qbtns">
-      <button class="btn full" id="retry" hidden><img class="ico sm" src="assets/icons/Update_on.png" alt="">Tentar de novo os que falharam</button>
+      <button class="btn full" id="retry" hidden><i class="ico sm" data-i="Update"></i>Tentar de novo os que falharam</button>
       <div class="qrow" id="runBtns" hidden>
-        <button class="btn secondary" id="pause"><img class="ico sm" src="assets/icons/Time.png" alt=""><span id="pauseTxt">Pausar fila</span></button>
-        <button class="btn secondary" id="cancel"><img class="ico sm" src="assets/icons/CancelQueue.png" alt="">Cancelar fila</button>
+        <button class="btn secondary" id="pause"><i class="ico sm" id="pauseIco" data-i="Pause"></i><span id="pauseTxt">Pausar fila</span></button>
+        <button class="btn secondary" id="cancel"><i class="ico sm" data-i="CancelQueue"></i>Cancelar fila</button>
       </div>
     </div>
   </div>
 </main>
-<footer id="footer">Grand Tracker Auto | v1.0.9 | Desenvolvido por Lucas Chedick</footer>
+<footer id="footer">Grand Tracker Auto | v1.1.0 | Desenvolvido por Lucas Chedick</footer>
 
 <div class="modal" id="config">
   <div class="sheet" role="dialog" aria-label="Configurações">
     <div class="sheet-head">
-      <img class="ico sm" src="assets/icons/Config.png" alt="">
+      <i class="ico sm" data-i="Config"></i>
       <h2>Configurações</h2>
       <button class="close" id="closeConfig" title="Fechar (Esc)">×</button>
     </div>
@@ -364,6 +372,7 @@
           <button class="btn secondary small" id="copyDiag">Copiar diagnóstico</button>
           <button class="btn secondary small" id="resetDefaults">Restaurar padrões</button>
         </div>
+        <button class="btn secondary small full" id="restartNow" style="margin-top:6px">Reiniciar o Premiere</button>
         <div class="result" id="supportResult"></div>
         <details class="log"><summary><span class="chev">▸</span>Ver log</summary><pre id="log"></pre></details>
       </details>
@@ -385,7 +394,7 @@
 <div class="modal" id="notesModal">
   <div class="sheet" role="dialog" aria-label="Notas da versão">
     <div class="sheet-head">
-      <img class="ico sm" src="assets/icons/Update.png" alt="">
+      <i class="ico sm" data-i="Update"></i>
       <h2 id="notesTitle">Novidades</h2>
       <button class="close" id="closeNotes" title="Fechar (Esc)">×</button>
     </div>
@@ -393,6 +402,6 @@
   </div>
 </div>
 
-<script src="js/main.js"></script>
+<script src="js/icons.js"></script><script src="js/main.js"></script>
 </body>
 </html>

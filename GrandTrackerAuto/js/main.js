@@ -11,6 +11,12 @@
   var $ = function (id) { return document.getElementById(id); };
   var each = function (list, fn) { Array.prototype.forEach.call(list, fn); };
 
+  // icones em SVG (js/icons.js): <i class="ico" data-i="Nome"> recebe o desenho; a cor vem do CSS
+  var ICONS = window.GTA_ICONS || {};
+  function icon(name, cls) { return '<i class="ico' + (cls ? " " + cls : "") + '" data-i="' + name + '">' + (ICONS[name] || "") + "</i>"; }
+  function setIcon(el, name) { el.dataset.i = name; el.innerHTML = ICONS[name] || ""; }
+  each(document.querySelectorAll("[data-i]"), function (el) { setIcon(el, el.dataset.i); });
+
   // ------------------------------------------------------------ utilidades
   function extDir() {
     var p = decodeURI(cep.getSystemPath("extension")).replace(/^file:\/{2,3}/, "");
@@ -120,15 +126,16 @@
   function setQual(q) { qual = q; save("qual", q); setSeg("qual", q); $("qualHint").textContent = QUAL_HINT[q]; }
 
   function paintRange(el) { el.style.setProperty("--p", ((el.value - el.min) / (el.max - el.min) * 100) + "%"); }
+  // barra azul parte do centro e cresce só para o lado da bolinha
   function paintCenter(el) {
     var v = Number(el.value), min = Number(el.min), max = Number(el.max);
     var mid = (0 - min) / (max - min) * 100, at = (v - min) / (max - min) * 100;
-    el.style.setProperty("--from", Math.min(mid, at) + "%");
-    el.style.setProperty("--w", Math.abs(at - mid) + "%");
+    var a = Math.min(mid, at), b = Math.max(mid, at);
+    el.style.setProperty("--track", "linear-gradient(to right, #4a4a4a " + a + "%, var(--accent) " + a + "%, var(--accent) " + b + "%, #4a4a4a " + b + "%)");
   }
   function posLabel(v) { v = Number(v); return v === 0 ? "Centro" : v < 0 ? "← " + (-v) + "%" : v + "% →"; }
   function refresh() {
-    paintRange($("dz")); paintRange($("sv")); paintRange($("pos"));
+    paintRange($("dz")); paintRange($("sv")); paintCenter($("pos"));
     $("dzv").textContent = $("dz").value + "%";
     $("svv").textContent = (Number($("sv").value) / 10).toFixed(1);
     $("posv").textContent = posLabel($("pos").value);
@@ -236,7 +243,7 @@
 
   // ------------------------------------------------------------ fila
   var queue = [], cancelled = false, current = null, lastSel = null;
-  var ICON = { queued: "Queue", running: "Track_accent", ok: "Ok_ok", fail: "Fail_err", skip: "Fail_warn", cancel: "CancelQueue" };
+  var ICON = { queued: ["Queue"], running: ["Track", "c-accent"], ok: ["Ok", "c-ok"], fail: ["Fail", "c-err"], skip: ["Fail", "c-warn"], cancel: ["CancelQueue"] };
   var ST = { queued: "Na fila", ok: "Pronto", fail: "Falhou", skip: "Pulado", cancel: "Cancelado" };
 
   // render incremental: cada item tem o seu <li>, assim as animacoes nao reiniciam a cada atualizacao
@@ -248,7 +255,7 @@
     }
     var sub = it.state === "running" ? '<div class="bar sub"><div style="width:' + Math.round(it.progress * 100) + '%"></div></div>' : "";
     var msg = it.msg ? '<div class="msg">' + esc(it.msg) + "</div>" : "";
-    return '<img class="ico" alt="" src="assets/icons/' + ICON[it.state] + '.png">' +
+    return icon(ICON[it.state][0], ICON[it.state][1]) +
       '<span class="name">' + esc(it.name) + '</span><span class="st">' + st + "</span>" + sub + msg;
   }
   function renderQueue() {
@@ -284,19 +291,10 @@
     $("overall").style.width = (tot ? Math.round(prog / tot * 100) : 0) + "%";
     overallFrac = tot ? prog / tot : 0;
     activeCount = active.length; activeIdx = idx >= 0 ? idx + 1 : done;
-    if (busy) updateTitleAndTaskbar();
+    if (busy) taskbar.set(overallFrac);
   }
   var overallFrac = 0, activeCount = 0, activeIdx = 0;
-  var TITLE = "GTA • Grand Tracker Auto V1";
-  function setPanelTitle(t) {
-    var full = t ? "GTA • " + t : TITLE;
-    document.title = full;
-    try { cep.invokeSync("setWindowTitle", full); } catch (e) {}
-  }
-  function updateTitleAndTaskbar() {
-    setPanelTitle((paused ? "pausado " : "") + activeIdx + "/" + activeCount);
-    taskbar.set(overallFrac);
-  }
+
 
   $("queueList").addEventListener("click", async function (e) {
     var li = e.target.closest("li"); if (!li || !lastSel) return;
@@ -411,7 +409,7 @@
     ["run", "clear", "updateBtn", "hdrUpdate", "retry"].forEach(function (id) { $(id).disabled = b; });
     $("runBtns").hidden = !b; $("cancel").disabled = false;
     if (b) $("retry").hidden = true;
-    if (!b) { paused = false; $("pause").classList.remove("paused"); $("pauseTxt").textContent = "Pausar fila"; }
+    if (!b) { paused = false; $("pause").classList.remove("paused"); $("pauseTxt").textContent = "Pausar fila"; setIcon($("pauseIco"), "Pause"); }
   }
 
   // processa os itens marcados com inRun e estado "queued"
@@ -450,7 +448,6 @@
     clearInterval(etaTimer);
     var elapsed = (Date.now() - eta.start) / 1000;
     setBusy(false); renderQueue(); $("eta").hidden = true;
-    setPanelTitle("");
 
     var run = queue.filter(function (q) { return q.inRun; });
     var ok = run.filter(function (q) { return q.state === "ok"; }).length;
@@ -510,9 +507,10 @@
     paused = !paused;
     $("pause").classList.toggle("paused", paused);
     $("pauseTxt").textContent = paused ? "Continuar" : "Pausar fila";
+    setIcon($("pauseIco"), paused ? "Return" : "Pause");
     if (paused) { pausedAt = Date.now(); setStatus("Pausando… o clipe atual termina e a fila espera."); }
     else { eta.start += Date.now() - pausedAt; setStatus(""); }
-    updateTitleAndTaskbar();
+    taskbar.state(paused ? 8 : 2);
   });
 
   $("cancel").addEventListener("click", function () {
@@ -740,7 +738,9 @@
       "if (Get-Process -Id $id -ErrorAction SilentlyContinue) { L 'Premiere nao fechou (salvar cancelado?)'; exit 2 }",
       "Start-Sleep -Seconds 3",
       "$proj = " + psStr(proj || ""),
-      "if ($proj -and (Test-Path -LiteralPath $proj)) { Start-Process -FilePath $exe -ArgumentList ('\"' + $proj + '\"'); L ('reaberto com ' + $proj) } else { Start-Process -FilePath $exe; L 'reaberto' }"
+      "$ok = $false",
+      "if ($proj -and (Test-Path -LiteralPath $proj)) { try { Invoke-Item -LiteralPath $proj; $ok = $true; L ('reaberto pelo arquivo (como duplo clique): ' + $proj) } catch { L ('falhou abrir o arquivo: ' + $_) } }",
+      "if (-not $ok) { Start-Process -FilePath $exe; L 'reaberto sem projeto' }"
     ].join("\n");
   }
   async function startWatcher(proj) {
@@ -773,13 +773,18 @@
       'LOG=' + shq(log),
       'L() { echo "$(date +%Y-%m-%dT%H:%M:%S) $1" >> "$LOG"; }',
       'L "vigia iniciado"',
-      'PID=$(pgrep -f "/Adobe Premiere Pro[^/]*\\.app/Contents/MacOS/" | head -n 1)',
-      '[ -z "$PID" ] && { L "Premiere nao encontrado"; exit 1; }',
-      'EXE=$(ps -p "$PID" -o comm= )',
-      'APP=$(echo "$EXE" | sed -E "s#(\\.app)/Contents/.*#\\1#")',
+      'APP=$(lsappinfo info -only bundlepath "$(lsappinfo front)" | sed -E \'s/.*="(.*)"/\\1/\')',
+      'case "$APP" in *"Premiere Pro"*.app) ;; *)',
+      '  PID=$(pgrep -f "/Adobe Premiere Pro[^/]*\\.app/Contents/MacOS/" | head -n 1)',
+      '  APP=$(ps -p "$PID" -o comm= | sed -E "s#(\\.app)/Contents/.*#\\1#") ;;',
+      'esac',
+      '[ -z "$APP" ] && { L "Premiere nao encontrado"; exit 1; }',
       'L "app: $APP"',
-      'for i in $(seq 1 360); do kill -0 "$PID" 2>/dev/null || break; sleep 0.5; done',
-      'kill -0 "$PID" 2>/dev/null && { L "Premiere nao fechou (salvar cancelado?)"; exit 2; }',
+      // o lsappinfo lista os apps abertos com 'bundle path="..."' (nao pega processos auxiliares)
+      'running() { lsappinfo list 2>/dev/null | grep -qF "\\"$APP\\""; }',
+      'for i in $(seq 1 360); do running || break; sleep 0.5; done',
+      'running && { L "Premiere nao fechou (salvar cancelado?)"; exit 2; }',
+      'L "Premiere fechou"',
       'sleep 3',
       'PROJ=' + shq(proj || ""),
       'if [ -n "$PROJ" ] && [ -e "$PROJ" ]; then open -a "$APP" "$PROJ"; L "reaberto com $PROJ"; else open -a "$APP"; L "reaberto"; fi'
@@ -789,14 +794,30 @@
     return "bash";
   }
   function shq(t) { return "'" + String(t).replace(/'/g, "'\\''") + "'"; }
+  var REOPEN_FILE = path.join(os.tmpdir(), "GrandTrackerAuto_reabrir.json");
+  // depois de reiniciar: se o Premiere abriu sem o projeto, o painel abre pela API do Premiere
+  async function reopenAfterRestart() {
+    var info;
+    try { info = JSON.parse(fs.readFileSync(REOPEN_FILE, "utf8")); } catch (e) { return; }
+    try { fs.unlinkSync(REOPEN_FILE); } catch (e) {}
+    if (!info || !info.path || Date.now() - info.t > 15 * 60 * 1000 || !fs.existsSync(info.path)) return;
+    await sleep(6000);
+    var cur = "";
+    try { cur = await evalES("app.project && app.project.path ? app.project.path : ''"); } catch (e) {}
+    var norm = function (p) { return String(p || "").replace(/\\/g, "/").toLowerCase(); };
+    if (norm(cur) === norm(info.path)) { addLog("reinício: projeto já aberto\n"); return; }
+    addLog("reinício: abrindo o projeto pela API do Premiere\n");
+    await evalES("app.openDocument(" + JSON.stringify(info.path) + ", true, false, true)");
+  }
   async function restartPremiere() {
-    var b = $("restart");
+    var b = this && this.tagName ? this : $("restart");
     b.disabled = true;
     try {
       var proj = "";
       try { proj = await evalES("app.project && app.project.path ? app.project.path : ''"); } catch (e) {}
       if (/^EvalScript error/i.test(proj)) proj = "";
       setStatus("Reiniciando o Premiere…", "ok", true);
+      if (proj) { try { fs.writeFileSync(REOPEN_FILE, JSON.stringify({ path: proj, t: Date.now() })); } catch (e) {} }
       var how = IS_MAC ? startWatcherMac(proj) : await startWatcher(proj);
       addLog("vigia iniciado via " + how + "\n");
       setTimeout(function () { evalES("app.quit()"); }, 1200);
@@ -808,6 +829,8 @@
     }
   }
   $("restart").addEventListener("click", restartPremiere);
+  $("restartNow").addEventListener("click", restartPremiere);
+  setTimeout(reopenAfterRestart, 500);
 
   // ------------------------------------------------------------ notas da versao
   // le o CHANGELOG.md do plugin: "## v1.2.3" abre uma versao, "- " e "  - " sao itens
@@ -866,12 +889,12 @@
   var aumidReady = false;
   async function ensureAumid() {
     if (aumidReady) return;
-    var icon = path.join(EXT, "assets", "icons", "Track_accent.png");
+    var iconFile = path.join(EXT, "assets", "icons", "Track_accent.png");
     await psRun([
       "$k = 'HKCU:\\Software\\Classes\\AppUserModelId\\" + AUMID + "'",
       "New-Item -Path $k -Force | Out-Null",
       "Set-ItemProperty -Path $k -Name DisplayName -Value 'Grand Tracker Auto'",
-      "Set-ItemProperty -Path $k -Name IconUri -Value " + psStr(icon),
+      "Set-ItemProperty -Path $k -Name IconUri -Value " + psStr(iconFile),
       "Set-ItemProperty -Path $k -Name IconBackgroundColor -Value '00000000'"
     ].join("; "));
     aumidReady = true;

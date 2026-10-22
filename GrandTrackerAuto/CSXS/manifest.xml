@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.lchedick.grandtrackerauto" ExtensionBundleVersion="1.0.9"
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.lchedick.grandtrackerauto" ExtensionBundleVersion="1.1.0"
   ExtensionBundleName="Grand Tracker Auto" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="com.lchedick.grandtrackerauto.panel" Version="1.0.9" />
+    <Extension Id="com.lchedick.grandtrackerauto.panel" Version="1.1.0" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>

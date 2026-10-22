@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.0 — outubro de 2026
+
+- **Visual novo**: todos os ícones foram redesenhados e agora são vetoriais (SVG), nítidos em qualquer tamanho de interface.
+- **Logo novo** no cabeçalho.
+- **Botões principais repaginados**: cantos mais arredondados, mais espaço entre eles e uma animação que aumenta o botão quando você passa o mouse.
+- **Pausar e Continuar** com ícones próprios.
+- **Correção do "Reiniciar o Premiere" no Mac**: o Premiere fechava e não abria de novo. Agora ele reabre com o projeto.
+- **Correção do erro "This file path does not exist on disk"** ao reiniciar pelo botão (Windows): o projeto agora é aberto como num duplo clique no arquivo. Se mesmo assim o Premiere abrir sem ele, o painel abre o projeto sozinho.
+- **Botão "Reiniciar o Premiere"** em Configurações → Suporte.
+- Correção: a barra azul do controle "Posição do rosto" agora sai do centro e cresce só para o lado em que você arrasta.
+- Removido o contador no título do painel (o Premiere não deixa o painel mudar o título).
+
 ## v1.0.9 — outubro de 2026
 
 - **Estilos renomeados**: "Trackear rosto" (acompanha o rosto o tempo todo) e "Trackear corpo" (ignora o balanço e só anda quando o assunto muda de lugar). Agora são botões grandes, que ficam um embaixo do outro quando o painel está estreito.
@@ -7,7 +19,6 @@
 - **Barra de progresso no ícone do Premiere** na barra de tarefas (Windows): verde durante a fila, amarela pausada e vermelha se algo falhar.
 - **Som a cada clipe ou ao fim da fila**: escolha em Configurações → Avisos (padrão: ao fim da fila).
 - **Mês e ano** de cada versão nas notas da versão.
-- O título do painel mostra o andamento da fila (ex.: "GTA • 2/5"), quando o Premiere permite.
 - Correção: a barra azul do controle "Posição do rosto" agora acompanha a bolinha.
 - Textos mais genéricos: o painel e a documentação agora falam em **assunto** (a pessoa em cena) em vez de "pregador".
 

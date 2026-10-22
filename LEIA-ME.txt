@@ -82,7 +82,8 @@ Notificação:       aviso do sistema quando a fila termina (por padrão,
 Atualizações:      verificar ao abrir (liga/desliga).
 Interface:         tamanho Pequena, Média ou Grande.
 Python:            comando usado e botão "Testar Python".
-Suporte:           Copiar diagnóstico, Restaurar padrões e Ver log.
+Suporte:           Copiar diagnóstico, Restaurar padrões, Reiniciar o
+                   Premiere e Ver log.
 
 
 ATUALIZAÇÕES

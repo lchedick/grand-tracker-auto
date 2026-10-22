@@ -50,13 +50,15 @@ GrandTrackerAuto/          extensão CEP (o que vai para a pasta de extensões)
 ├── js/main.js             painel (lógica)
 ├── jsx/host.jsx           integração com o Premiere (ExtendScript)
 ├── engine/                motor de rastreamento em Python + modelos ONNX
-├── assets/                ícones e sons
+├── assets/                ícones (SVG) e sons
+├── js/icons.js            ícones usados pelo painel (gerado por tools/build_icons.py)
 ├── CHANGELOG.md           notas de cada versão (mostradas no painel)
 └── version.json           versão usada pelo atualizador
 instalar_Windows.bat       instalador Windows
 instalar_MacOS.command     instalador Mac (beta)
 LEIA-ME.txt                guia rápido que vai junto no zip
 tools/build_release.py     gera o zip da release
+tools/build_icons.py       converte os SVGs exportados do Illustrator nos ícones do painel
 ```
 
 ## Publicar uma versão nova
